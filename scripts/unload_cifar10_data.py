@@ -17,31 +17,60 @@ def unpickle(file):
     fo.close()
     return dict
 
-#def load_all_data():
-
-def main():
-
-    # Get system file location
+# Unload training data
+def unload_training_data():
+    # load first batches
     file = os.path.dirname(os.path.abspath(__file__)) + "/../data/cifar-10-batches-py/data_batch_1"
 
     # Unpickle the data batch
     data = unpickle(file)
 
-    # Load data
-    print("Number of images: " + str(len(data['data'])))
-    print("Number of labels: " + str(len(data['labels'])))
-
-    # Examine data
-    print(data['data'])
-
-    # Examine labels
-    print(np.array(data['labels']).reshape(10000, 1))
-
     # Merge with labels
-    merged_data = zip(np.array(data['labels']).reshape(10000, 1), data['data'])
+    training_data = np.concatenate((np.array(data['labels']).reshape(10000, 1), data['data']), axis=1)
+
+    # iterate remaining 4 training batches and concatenate to starting matrix
+    for i in range(4):
+        # Get system file location
+        file = os.path.dirname(os.path.abspath(__file__)) + "/../data/cifar-10-batches-py/data_batch_" + str(i+2)
+
+        # Unpickle the data batch
+        data = unpickle(file)
+
+        # Merge with labels
+        merged_data = np.concatenate((np.array(data['labels']).reshape(10000, 1), data['data']), axis=1)
+
+        # Append to all training data
+        training_data = np.concatenate((training_data, merged_data), axis=0)
+
+    print(training_data)
 
     # Save data to txt
-    np.savetxt('data_1.txt', merged_data, fmt='%i')
+    np.savetxt(os.path.dirname(os.path.abspath(__file__)) + '/../data/cifar10-train.txt', training_data, fmt='%i')
+
+# Unload test data
+def unload_test_data():
+    # Get system file location
+    file = os.path.dirname(os.path.abspath(__file__)) + "/../data/cifar-10-batches-py/test_batch"
+
+    # Unpickle the data batch
+    data = unpickle(file)
+
+    # Merge with labels
+    merged_data = np.concatenate((np.array(data['labels']).reshape(10000, 1), data['data']), axis=1)
+
+    print(merged_data)
+
+    # Save data to txt
+    np.savetxt(os.path.dirname(os.path.abspath(__file__)) + '/../data/cifar10-test.txt', merged_data, fmt='%i')
+
+def main():
+
+    # Unload training data
+    unload_training_data()
+
+    # Unload test data
+    #unload_test_data()
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
