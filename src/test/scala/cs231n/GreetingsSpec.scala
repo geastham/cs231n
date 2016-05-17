@@ -1,8 +1,8 @@
-package cs231n
+package greeter
 import org.scalatest._
 
 
-class MainSpec extends FlatSpec {
+class GreetingsSpec extends FlatSpec {
 
     "A Greeter" should "return a greeting" in {
       val greet = new Greetings
