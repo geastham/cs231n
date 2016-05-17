@@ -1,7 +1,7 @@
 #CS231N - Convolutional Neural Networks for Visual Recognition
 This is a working project repository for assignments / explorations associated with Stanford University's [cs231n](http://cs231n.stanford.edu/) course. Please see the website for more information and project background.
 
-I've chosen to implement this project using the Scala / Spark ecosystem as well as the following project dependencies:
+I've chosen to implement this project using the Scala / Spark ecosystem with the following project dependencies:
   * Scala 2.10.0
   * ScalaTest 2.0.M5b (current ScalaTest 2.0 beta version)
   * ScalaNLP [Breeze](http://www.scalanlp.org/)
