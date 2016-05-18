@@ -41,6 +41,6 @@ object Main extends App {
   println("Total predicted outcomes: " + predictedOutcomes.length)
   //predictedOutcomes.foreach(println)
   val accuracy = predictedOutcomes.map(x => x match { case (actual, predicted) => if(actual == predicted) 1 else 0}).fold(0)(_ + _) / predictedOutcomes.length
-  println("Accuracy: " + accuracy + "%")
+  println("Accuracy: " + (accuracy * 100) + "%")
 
 }
