@@ -24,7 +24,7 @@ class NearestNeighbor {
   }
 
   // Predict -- returns predicted labels (integers)
-  def predict(model: Unit, test_images: Array[LabeledImage]): Array[Int] = {
+  def predict(test_images: Array[LabeledImage]): Array[Int] = {
     // Loop over all values in test images
     test_images.map(test_image => { // return identified label (chosen based on index from trainingImages list)
       // Calculate distances by transforming summed distance over all training images
