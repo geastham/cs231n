@@ -16,20 +16,20 @@ import breeze.numerics._
  */
 class NearestNeighbor {
   // Local variables
-  private var trainingImages: List[LabeledImage] = null
+  private var trainingImages: Array[LabeledImage] = null
 
   // Train
-  def train(training_images: List[LabeledImage]) = {
+  def train(training_images: Array[LabeledImage]) = {
     trainingImages = training_images // remember all input data
   }
 
   // Predict -- returns predicted labels (integers)
-  def predict(model: Unit, test_images: List[LabeledImage]): List[Integer] = {
+  def predict(model: Unit, test_images: Array[LabeledImage]): Array[Int] = {
     // Loop over all values in test images
     test_images.map(test_image => { // return identified label (chosen based on index from trainingImages list)
       // Calculate distances by transforming summed distance over all training images
       val distances = trainingImages.map(training_image => { // return mapped List[Integer] of computed distances between test_image and training_image
-        test_image.l1Distance(training_image)
+        training_image.l1Distance(test_image)
       })
 
       // Select the smallest distance (use argmin UFunction in Breeze)

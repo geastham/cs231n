@@ -3,44 +3,40 @@ package cs231n.data
 /*
  *    Labeled Image
  *    -------------------------
- *    Support class for encapsulating a labeled image. Can only be instantiated from ImageParser API.
+ *    Support class for encapsulating a labeled image.
  */
 
 // Scala object - primarily used for built in factory method idioms
 object LabeledImage {
   // factory method
-  def apply(raw_image: String) = {
+  def apply(raw_image: String): LabeledImage = {
     // break string into parts
     val raw_image_parts = raw_image.split(" ")
 
     // create list from string
-    new List(
-      raw_image_parts.splice(0,1).toInt, // the first value in the string is the
-      List(raw_image_parts.splice(1, 1025).map(str_value => str_value.toInt)), // the first block fo 1024 values is red
-      List(raw_image_parts.splice(1025, 2049).map(str_value => str_value.toInt)), // the first block fo 1024 values is green
-      List(raw_image_parts.splice(2049, 3073).map(str_value => str_value.toInt)) // the first block fo 1024 values is blue
+    new LabeledImage(
+      raw_image_parts(0).toInt, // the first value in the string is the
+      raw_image_parts.slice(1, 1025).map(str_value => str_value.toInt), // the first block fo 1024 values is red
+      raw_image_parts.slice(1025, 2049).map(str_value => str_value.toInt), // the first block fo 1024 values is green
+      raw_image_parts.slice(2049, 3073).map(str_value => str_value.toInt) // the first block fo 1024 values is blue
     )
   }
 }
 
-class LabeledImage(label: Integer, redValues: List[Integer], greenValues: List[Integer], blueValues: List[Integer]) {
+class LabeledImage(labelValue: Int, redValues: Array[Int], greenValues: Array[Int], blueValues: Array[Int]) {
 
-  // L1 Distance function --
-  def l1Distance(image: LabeledImage): Double = {
-    // Grab image data (to cache in local clojure)
-    val imageData = image.data
-
-    // Zip image distances together with absolute difference
-    this.data.zipWithIndex.map((pixelValue, index) => {
-      Math.abs(image.data(index) - pixelValue)
-    }).fold(0.0)((acc,v) => { acc + v }) // return folded sum of absolute values
+  // L1 Distance function
+  def l1Distance(image: LabeledImage): Int = { // Zip image distances together with absolute difference
+    (this.data zip image.data).map(x => x match { // merge the zipped values together
+      case (a, b) => Math.abs(b - a) // Absolute value of the distance
+    }).fold(0)(_ + _) // sum the deltas
   }
 
   // Label accessor
-  def label: Integer = label // return instantiated label
+  def label: Int = labelValue // return instantiated label
 
   // Data vector -- used in
-  def data: List[Integer] = redValues :: greenValues :: blueValue
+  def data: Array[Int] = redValues ++ greenValues ++ blueValues
 }
 
 // Sample image
