@@ -31,6 +31,7 @@ class NearestNeighbor {
       val distances = trainingImages.map(training_image => { // return mapped List[Integer] of computed distances between test_image and training_image
         training_image.l1Distance(test_image)
       })
+      //println(DenseVector(distances))
 
       // Select the smallest distance (use argmin UFunction in Breeze)
       val minimumDistanceIndex = argmin(DenseVector(distances))
