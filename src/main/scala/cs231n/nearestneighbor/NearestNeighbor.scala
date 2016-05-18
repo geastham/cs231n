@@ -2,6 +2,11 @@ package cs231n.nearestneighbor
 
 import cs231n.data.LabeledImage
 
+// Required Breeze libraries
+import breeze.linalg._
+import breeze.math._
+import breeze.numerics._
+
 /*
  *    Nearest Neight Classifier
  *    -------------------------
@@ -13,18 +18,27 @@ class NearestNeighbor {
   // Local variables
   private var trainingImages: List[LabeledImage] = null
 
-  // L1 Distance measure -- defers calculation to Labeled Image
-  def l1Distance(x1: LabeledImage, x2: LabeledImage): Double = {
-    return x1.l1Distance(x2)
-  }
-
   // Train
   def train(training_images: List[LabeledImage]) = {
-    trainImages = trainin_images // remember all input data
+    trainingImages = training_images // remember all input data
   }
 
-  // Predict
-  def predict(model: Unit, test_images: List[LabeledImage]) = sys.error("NearestNeighbor.predict not implmented")
+  // Predict -- returns predicted labels (integers)
+  def predict(model: Unit, test_images: List[LabeledImage]): List[Integer] = {
+    // Loop over all values in test images
+    test_images.map(test_image => { // return identified label (chosen based on index from trainingImages list)
+      // Calculate distances by transforming summed distance over all training images
+      val distances = trainingImages.map(training_image => { // return mapped List[Integer] of computed distances between test_image and training_image
+        test_image.l1Distance(training_image)
+      })
 
-  def hello = "Yep, still compiles and runs! - "
+      // Select the smallest distance (use argmin UFunction in Breeze)
+      val minimumDistanceIndex = argmin(DenseVector(distances))
+
+      // Return the label of the minimum image (from the trainingImage cache)
+      trainingImages(minimumDistanceIndex).label
+    })
+  }
+
+  def hello = "Yep, still compiles and runs!"
 }
