@@ -19,10 +19,23 @@ class SVM {
   // Loss function for a single sample data point
   // @param x - Single column vector (D x 1) of pixel values from sample image
   // @param y - index of correct class (within range 0 to K)
-  // @param W - trained model (W) parameters
+  // @param W - trained model (W) parameters (K x D)
   // @return Li - calculated loss across all classes for single data sample
-  private def lossSingleSample(x, y, W): Double {
+  private def lossSingleSample(x: DenseVector[Double], y: Integer, W: DenseVector[Double]): Double {
+    // Set delta
+    val delta = 1.0
 
+    // Calculate dot product of W (K x D) and x (D x 1)
+    val scores = W * x
+
+    // Compute the margins for all classes
+    val margins = scores.map(s => if(s - s(y) + delta > 0) s - s(y) + delta else 0.0)
+
+    // Remove the computed margin for case y = j
+    margins(y) = 0.0
+
+    // Sum over all computed margins and return
+    sum(margins)
   }
 
   // Training function
