@@ -16,17 +16,17 @@ object LabeledImage {
     // create list from string
     new LabeledImage(
       raw_image_parts(0).toInt, // the first value in the string is the
-      raw_image_parts.slice(1, 1025).map(str_value => str_value.toInt), // the first block fo 1024 values is red
-      raw_image_parts.slice(1025, 2049).map(str_value => str_value.toInt), // the first block fo 1024 values is green
-      raw_image_parts.slice(2049, 3073).map(str_value => str_value.toInt) // the first block fo 1024 values is blue
+      raw_image_parts.slice(1, 1025).map(str_value => str_value.toDouble), // the first block fo 1024 values is red
+      raw_image_parts.slice(1025, 2049).map(str_value => str_value.toDouble), // the first block fo 1024 values is green
+      raw_image_parts.slice(2049, 3073).map(str_value => str_value.toDouble) // the first block fo 1024 values is blue
     )
   }
 }
 
-class LabeledImage(labelValue: Int, redValues: Array[Int], greenValues: Array[Int], blueValues: Array[Int]) {
+class LabeledImage(labelValue: Int, redValues: Array[Double], greenValues: Array[Double], blueValues: Array[Double]) {
 
   // L1 (Manhattan) Distance function
-  def l1Distance(image: LabeledImage): Int = { // Zip image distances together with absolute difference
+  def l1Distance(image: LabeledImage): Double = { // Zip image distances together with absolute difference
     (this.data zip image.data).map(x => x match { // merge the zipped values together
       case (a, b) => Math.abs(b - a) // Absolute value of the distance
     }).fold(0)(_ + _) // sum the deltas
@@ -43,7 +43,7 @@ class LabeledImage(labelValue: Int, redValues: Array[Int], greenValues: Array[In
   def label: Int = labelValue // return instantiated label
 
   // Data vector -- used in
-  def data: Array[Int] = redValues ++ greenValues ++ blueValues
+  def data: Array[Double] = redValues ++ greenValues ++ blueValues
 }
 
 // Sample image

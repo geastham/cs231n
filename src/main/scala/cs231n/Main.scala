@@ -2,16 +2,36 @@ package cs231n
 
 import cs231n.nearestneighbor.NearestNeighbor
 import cs231n.data.LabeledImage
+import cs231n.utils._
 
 // Required Breeze libraries
 import breeze.linalg._
 import breeze.math._
 import breeze.numerics._
-import breeze.stats.mean
+
 
 // Data processing
 import scala.io.Source
 
+// Pre-process images -- preps an array of images for training / testing
+// @params images -- array of LabeledImage's to prep
+// return meanImage -- vector representing the mean image used to prep the data
+// return preppedImages -- array of same size with prepped images
+def preProcessImages(images: Array[LabeledImage]): (DenseVector[Double], Array[LabeledImage]) = {
+  // Get the vectorized images
+  val vectorizedImages = DenseMatrix(images.map(image => image.data))
+
+  // Find the mean image vector
+  val meanVectorImage = mean(vectorizedImages)
+
+  // Subtract the mean image from each labeled image and return tuple
+  (meanVectorImage, images.map(i => {
+    val processedRGBValues = (DenseVector(i.data) - meanVectorImage).toArray
+    LabeledImage(i.value, processedRGBValues.slice(0, 1024), processedRGBValues.slice(1024, 2048), processedRGBValues.slice(2048, 3072))
+  }))
+}
+
+// Main method -- starts and runs the core application
 object Main extends App {
   // File paths
   val trainingImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-train.txt"
