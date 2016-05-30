@@ -21,7 +21,7 @@ class SVM {
   // @param y - index of correct class (within range 0 to K)
   // @param W - trained model (W) parameters (K x D)
   // @return Li - calculated loss across all classes for single data sample
-  private def lossSingleSample(x: DenseVector[Double], y: Integer, W: DenseVector[Double]): Double {
+  private def lossSingleSample(x: DenseVector[Double], y: Integer, W: DenseMatrix[Double]): Double {
     // Set delta
     val delta = 1.0
 
@@ -40,8 +40,8 @@ class SVM {
 
   // Training function
   // @param training_images -- set of training images to train
-  // @return W: DenseVector[Double] -- trained model (W) parameters
-  def train(training_images: Array[LabeledImage]): DenseVector[Double] = {
+  // @return W: DenseMatrix[Double] -- trained model (W) parameters
+  def train(training_images: Array[LabeledImage]): DenseMatrix[Double] = {
     //
   }
 
