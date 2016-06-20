@@ -21,12 +21,12 @@ class SVM {
   // @param y - index of correct class (within range 0 to K)
   // @param W - trained model (W) parameters (K x D)
   // @return Li - calculated loss across all classes for single data sample
-  private def lossSingleSample(x: DenseVector[Double], y: Integer, W: DenseMatrix[Double]): Double {
+  private def lossSingleSample(x: DenseVector[Double], y: Integer, W: DenseMatrix[Double]): Double = {
     // Set delta
-    val delta = 1.0
+    val delta: Double = 1.0
 
     // Calculate dot product of W (K x D) and x (D x 1)
-    val scores = W * x
+    val scores: DenseVector[Double] = W * x
 
     // Compute the margins for all classes
     val margins = scores.map(s => if(s - s(y) + delta > 0) s - s(y) + delta else 0.0)
