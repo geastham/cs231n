@@ -25,7 +25,7 @@ class SVM {
     // Set delta
     val delta: Double = 1.0
 
-    // Calculate dot product of W (K x D) and x (D x 1)
+    // Calculate dot product of W (K x (D + 1)) and x ((D + 1) x 1)
     val scores: DenseVector[Double] = W * x
 
     // Keep track of score(y) - (K x 1)
@@ -47,12 +47,49 @@ class SVM {
     sum(margins)
   }
 
+  // Loss function for a entire dataset
+  // @param x - Array of column vectors ((D + 1) x 1) of pixel values from image dataset of size N
+  // @param y - Array of correct class indices (within range 0 to K)
+  // @param W - trained model (W) parameters (K x (D + 1))
+  // @return L - calculated loss across all N data samples
+  private def loss(x: Array[DenseVector[Double]], y: Array[Int], W: DenseMatrix[Double], lambda: Double): Double = {
+    // Compute summed loss across all data points
+    val data_loss = x.zipWithIndex.map(X_zipped =>
+      X_zipped match {
+        case (x_i, i) => lossSingleSample(x_i, y(i), W)
+      }
+    ).fold(0.0)(_ + _) * (1.0 / x.length)
+
+    // Compute L2 regularization cost
+    //val regularization_loss =
+
+    // return raw data loss
+    data_loss
+  }
+
   // Training function
   // @param training_images -- set of training images to train
-  // @return W: DenseMatrix[Double] -- trained model (W) parameters
-  //def train(training_images: Array[LabeledImage]): DenseMatrix[Double] = {
-    //
-  //}
+  // @param number_of_classes -- total number of distinct classes in training / test set
+  // @return W: DenseMatrix[Double] -- trained model (W) parameters - (K x (D + 1))
+  def train(training_images: Array[LabeledImage], number_of_classes: Integer): DenseMatrix[Double] = {
+    // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
+    val biased_training_data = training_images.map(i => {
+      DenseVector(i.data ++ Array(1.0))
+    })
+
+    // Generate training labels
+    val training_labels = training_images.map(i => i.label)
+
+    // Initialize random W
+    val W: DenseMatrix[Double] = DenseMatrix.rand(number_of_classes, biased_training_data(0).length) * 0.001
+
+    // Calculate loss on single run of data
+    val total_loss = loss(biased_training_data, training_labels, W, 0.00001)
+    println("Total loss from first run: " + total_loss)
+
+    // Return trained weight matrix W
+    W
+  }
 
   // Predict -- returns predicted labels (integers)
   //def predict(test_images: Array[LabeledImage]): Array[Int] = {

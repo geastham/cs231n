@@ -1,6 +1,7 @@
 package cs231n
 
 import cs231n.nearestneighbor.NearestNeighbor
+import cs231n.svm.SVM
 import cs231n.data.LabeledImage
 import cs231n.utils.VectorUtils
 
@@ -44,23 +45,26 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(500))
+  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(10))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
-  val processedTrainingImages = preProcessImages(trainingImages)
+  val (meanVectorImage, processedTrainingImages) = preProcessImages(trainingImages)
 
   // Load training data -- add to test set
   println("Loading test data...")
-  for(line <- Source.fromFile(testImagesFilePath).getLines().take(50))
+  for(line <- Source.fromFile(testImagesFilePath).getLines().take(1))
     testImages = testImages ++ Array(LabeledImage(line))
-  val processedTestImages = preProcessImages(testImages)
+  val processedTestImages = testImages.map(i => {
+    val processedRGBValues = (DenseVector(i.data) - meanVectorImage).toArray
+    new LabeledImage(i.label, processedRGBValues.slice(0, 1024), processedRGBValues.slice(1024, 2048), processedRGBValues.slice(2048, 3072))
+  })
 
   // Train classifier (NearestNeighbor)
-  /*println("Training classifier...")
-  val nn = new NearestNeighbor
-  nn.train(trainingImages)
+  println("Training classifier...")
+  val svm = new SVM
+  svm.train(trainingImages, 10)
 
   // Predict test values
-  println("Making predictions...")
+  /*println("Making predictions...")
   val predictions = nn.predict(testImages)
 
   // Show predicted accuracy
