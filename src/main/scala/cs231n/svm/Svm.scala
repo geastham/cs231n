@@ -61,10 +61,10 @@ class SVM {
     ).fold(0.0)(_ + _) * (1.0 / x.length)
 
     // Compute L2 regularization cost
-    //val regularization_loss =
+    val regularization_loss = lambda * W.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _)
 
     // return raw data loss
-    data_loss
+    data_loss + regularization_loss
   }
 
   // Training function
@@ -84,7 +84,7 @@ class SVM {
     val W: DenseMatrix[Double] = DenseMatrix.rand(number_of_classes, biased_training_data(0).length) * 0.001
 
     // Calculate loss on single run of data
-    val total_loss = loss(biased_training_data, training_labels, W, 0.00001)
+    val total_loss = loss(biased_training_data, training_labels, W, 0.001)
     println("Total loss from first run: " + total_loss)
 
     // Return trained weight matrix W
