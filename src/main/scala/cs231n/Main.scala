@@ -22,7 +22,7 @@ object Main extends App {
   // return preppedImages -- array of same size with prepped images
   def preProcessImages(images: Array[LabeledImage]): (DenseVector[Double], Array[LabeledImage]) = {
     // Get the vectorized images
-    val vectorizedImages = DenseMatrix(images.map(image => image.data))
+    val vectorizedImages = images.map(image => DenseVector(image.data)) // Array[DenseVector]
 
     // Find the mean image vector
     val meanVectorImage = VectorUtils.mean(vectorizedImages)
@@ -44,16 +44,18 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(5000))
+  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(500))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
+  val processedTrainingImages = preProcessImages(trainingImages)
 
   // Load training data -- add to test set
   println("Loading test data...")
-  for(line <- Source.fromFile(testImagesFilePath).getLines().take(1000))
+  for(line <- Source.fromFile(testImagesFilePath).getLines().take(50))
     testImages = testImages ++ Array(LabeledImage(line))
+  val processedTestImages = preProcessImages(testImages)
 
   // Train classifier (NearestNeighbor)
-  println("Training classifier...")
+  /*println("Training classifier...")
   val nn = new NearestNeighbor
   nn.train(trainingImages)
 
@@ -68,5 +70,5 @@ object Main extends App {
   val accuracy = predictedOutcomes.map(x => x match { case (actual, predicted) => if(actual == predicted) 1.0 else 0.0}).fold(0.0)(_ + _) / predictedOutcomes.length
   println(accuracy)
   println("Accuracy: " + (accuracy * 100) + "%")
-
+  */
 }

@@ -29,14 +29,14 @@ class LabeledImage(labelValue: Int, redValues: Array[Double], greenValues: Array
   def l1Distance(image: LabeledImage): Double = { // Zip image distances together with absolute difference
     (this.data zip image.data).map(x => x match { // merge the zipped values together
       case (a, b) => Math.abs(b - a) // Absolute value of the distance
-    }).fold(0)(_ + _) // sum the deltas
+    }).fold(0.0)(_.toDouble + _.toDouble) // sum the deltas
   }
 
   // L2 (Euclidean) Distance function
   def l2Distance(image: LabeledImage): Double = { // Zip image distances together with absolute difference
     Math.sqrt((this.data zip image.data).map(x => x match { // merge the zipped values together
       case (a, b) => Math.sqrt(b - a) // Absolute value of the distance
-    }).fold(0.0)(_ + _)) // sum the deltas
+    }).fold(0.0)(_.toDouble + _.toDouble)) // sum the deltas
   }
 
   // Label accessor

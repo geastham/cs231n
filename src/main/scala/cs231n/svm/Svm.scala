@@ -28,8 +28,17 @@ class SVM {
     // Calculate dot product of W (K x D) and x (D x 1)
     val scores: DenseVector[Double] = W * x
 
-    // Compute the margins for all classes
-    val margins = scores.map(s => if(s - s(y) + delta > 0) s - s(y) + delta else 0.0)
+    // Keep track of score(y) - (K x 1)
+    val score_y = scores(y.toInt)
+
+    // Compute the margins for all K classes
+    val margins = scores.toArray.map(k_score => {
+      if(k_score - score_y + delta > 0) {
+        k_score - k_score + delta
+      } else {
+        0.0
+      }
+    })
 
     // Remove the computed margin for case y = j
     margins(y) = 0.0
@@ -41,12 +50,12 @@ class SVM {
   // Training function
   // @param training_images -- set of training images to train
   // @return W: DenseMatrix[Double] -- trained model (W) parameters
-  def train(training_images: Array[LabeledImage]): DenseMatrix[Double] = {
+  //def train(training_images: Array[LabeledImage]): DenseMatrix[Double] = {
     //
-  }
+  //}
 
   // Predict -- returns predicted labels (integers)
-  def predict(test_images: Array[LabeledImage]): Array[Int] = {
+  //def predict(test_images: Array[LabeledImage]): Array[Int] = {
     // To implement
-  }
+  //}
 }
