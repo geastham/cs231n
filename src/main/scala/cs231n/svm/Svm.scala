@@ -75,7 +75,7 @@ class SVM {
     // Initialize local variables
     var x = W.copy // make an editable copy of W
     var fx = f(x) // Get loss value at original W
-    var gradient = DenseMatrix.zeros[Double](x.rows, x.cols) // Initialize random gradient
+    var gradient = DenseMatrix.zeros[Double](x.rows, x.cols) // Initialize empty gradient
     var h = 0.0000001 // arbitrary small h (to simulate limit)
 
     // Iterate over all values of W -- change one at a time
@@ -96,6 +96,82 @@ class SVM {
     gradient
   }
 
+  // Analytical gradient (for a single point (x,y))
+  // @param x - Single column vector ((D + 1) x 1) of pixel values from sample image
+  // @param y - index of correct class (within range 0 to K)
+  // @param W - trained model (W) parameters (K x (D + 1))
+  // @return dW - the numerically derived gradient vector at value x (K X (D + 1))
+  private def analytical_gradient_single(x: DenseVector[Double], y: Integer, W: DenseMatrix[Double]): DenseMatrix[Double] = {
+    // Create gradient to return
+    var gradient = DenseMatrix.zeros[Double](W.rows, W.cols)
+
+    // Set delta
+    val delta: Double = 1.0
+
+    // Calculate dot product of W (K x (D + 1)) and x ((D + 1) x 1)
+    val scores: DenseVector[Double] = W * x
+
+    // Keep track of score(y) - (K x 1)
+    val score_y = scores(y.toInt)
+
+    // Iterate over each of K rows in W to run x against - update each row vector of gradient at each iteration
+    (0 to (gradient.rows - 1)).foreach(i => {
+      // Check if this row is a member of the correct class
+      if(i == y.toInt) { // incentivize classes that meet the margin
+        // Set initial gradient scalar
+        var contribution_scalar = 0.0
+
+        // Sum over all classes that are not member of Y
+        (0 to (gradient.rows - 1)).foreach(_i => {
+          if((_i != y.toInt) && (scores(_i) - score_y + delta > 0)) {
+            contribution_scalar += 1.0
+          }
+        })
+
+        // Set corresponding gradient row
+        (0 to (gradient.cols - 1)).foreach(j => {
+          gradient(i,j) = -1.0 * contribution_scalar * x(j)
+        })
+      } else { // only count if class meets the margin
+        // Set gradient scalar
+        var contribution_scalar = 0.0 // default to assume it will not beat the margin
+
+        // Check if it does beat the margin
+        if(scores(i) - score_y + delta > 0) {
+          contribution_scalar = 1.0
+        }
+
+        // Set the corresponding gradient row
+        (0 to (gradient.cols - 1)).foreach(j => {
+          gradient(i,j) = contribution_scalar * x(j)
+        })
+      }
+    })
+
+    // Return calculated gradient
+    gradient
+  }
+
+  // Evaluate gradient
+  // @param x - Array of column vectors ((D + 1) x 1) of pixel values from image dataset of size N
+  // @param y - Array of correct class indices (within range 0 to K)
+  // @param W - trained model (W) parameters (K x (D + 1))
+  // @return dW - the numerically derived gradient vector at value x (K X (D + 1))
+  private def analytical_gradient(x: Array[DenseVector[Double]], y: Array[Int], W: DenseMatrix[Double]): DenseMatrix[Double] = {
+    // Define initial empty gradient
+    var gradient = DenseMatrix.zeros[Double](W.rows, W.cols)
+
+    // Iterate over each sample from training set, calculate single gradient, then average
+    val final_gradient = x.zipWithIndex.map(X_zipped =>
+      X_zipped match {
+        case (x_i, i) => analytical_gradient_single(x_i, y(i), W)
+      }
+    ).fold(gradient)(_ + _) * (1.0 / x.length)
+
+    // Return final gradient
+    final_gradient
+  }
+
   // Training function
   // @param training_images -- set of training images to train
   // @param number_of_classes -- total number of distinct classes in training / test set
@@ -110,7 +186,7 @@ class SVM {
     val training_labels = training_images.map(i => i.label)
 
     // Initialize random W
-    val W: DenseMatrix[Double] = DenseMatrix.rand(number_of_classes, biased_training_data(0).length)
+    var W: DenseMatrix[Double] = DenseMatrix.rand(number_of_classes, biased_training_data(0).length)
     println(W)
 
     // Calculate loss on single run of data
@@ -122,9 +198,41 @@ class SVM {
       loss(biased_training_data, training_labels, _w, 0.001)
     }
 
+    val gradient_single = analytical_gradient_single(biased_training_data(0), training_labels(0), W)
+    println(gradient_single)
+
+    /*
+     *  Train (Analytical)
+     */ 
+    // Iterate over a desired number of epochs
+    /*(0 to 10).foreach(e => {
+      // Calculate and print numerical gradient from initial W
+      val gradient_a = analytical_gradient(biased_training_data, training_labels, W)
+      println("Analytical Gradient...")
+      println(gradient_a)
+
+      // Set step size
+      val step_size = Math.pow(10, 2)
+
+      // Update new W with gradient
+      W = W - step_size * gradient_a
+
+      // Calculate new loss function
+      val loss_new = loss(biased_training_data, training_labels, W, 0.001)
+
+      // Print output
+      println(W)
+      println("New loss after gradient update [" + e + "]:" + loss_new)
+    })*/
+
+    /*
+     *  Numerical Gradient Checking
+     */ 
+
     // Calculate and print numerical gradient from initial W
-    val gradient = numerical_gradient(loss_closure, W)
-    println(gradient)
+    /*val gradient_n = numerical_gradient(loss_closure, W)
+    println("Numerical Gradient...")
+    println(gradient_n)
 
     // Try loss function with different step sizes
     (-10 to 3).foreach(i => {
@@ -132,14 +240,38 @@ class SVM {
       val step_size = Math.pow(10, i)
 
       // Update new W with gradient
-      val W_i: DenseMatrix[Double] = W - step_size * gradient
+      val W_i: DenseMatrix[Double] = W - step_size * gradient_n
 
       // Calculate new loss function
       val loss_new = loss(biased_training_data, training_labels, W_i, 0.001)
 
       // Print output
       println("New loss after gradient update [" + i + "]:" + loss_new)
-    })
+    })*/
+
+    /*
+     *  Train (Numerical)
+     */ 
+    // Iterate over a desired number of epochs
+    /*(0 to 10).foreach(e => {
+      // Calculate and print numerical gradient from initial W
+      val gradient_n = numerical_gradient(loss_closure, W)
+      println("Numerical Gradient...")
+      println(gradient_n)
+
+      // Set step size
+      val step_size = Math.pow(10, 2)
+
+      // Update new W with gradient
+      W = W - step_size * gradient_n
+
+      // Calculate new loss function
+      val loss_new = loss(biased_training_data, training_labels, W, 0.001)
+
+      // Print output
+      println(W)
+      println("New loss after gradient update [" + e + "]:" + loss_new)
+    })*/
 
     // Return trained weight matrix W
     W
