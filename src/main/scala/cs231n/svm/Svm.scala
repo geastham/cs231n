@@ -71,18 +71,29 @@ class SVM {
   // @param f - curried closure over loss function
   // @param W - trained model (W) parameters (K x (D + 1))
   // @return dW - the numerically derived gradient vector at value x (K X (D + 1))
-  private def numerical_gradient(f: (x: Array[DenseVector[Double]], y: Array[Int]) => Double, W: DenseMatrix[Double]): DenseMatrix[Double] = {
+  private def numerical_gradient(f: (Array[DenseVector[Double]], Array[Int]) => Double, W: DenseMatrix[Double]): DenseMatrix[Double] = {
     // Initialize local variables
-    var fx = f(W) // Get loss value at original W
-    var dW = DenseMatrix.zeros(W.shape) // Initialize random gradient
+    var x = W.copy // make an editable copy of W
+    var fx = f(x) // Get loss value at original W
+    var gradient = DenseMatrix.zeros(x(::, 0).length, x(0, ::).length) // Initialize random gradient
     var h = 0.00001 // arbitrary small h (to simulate limit)
 
     // Iterate over all values of W -- change one at a time
-    (0 to W(::, 0).length).foreach(i => {
-      (0 to W(0, ::).length).foreach(j => {
-        // Set index
+    (0 to x(::, 0).length).foreach(i => {
+      (0 to x(0, ::).length).foreach(j => {
+        // Evaluate function at W + h
+        val original_W_i_j = x(i,j)
+        x(i,j) = original_W_i_j + h // increment by h
+        val fxh = f(x) // evaluate f(x + h)
+        x(i,j) = original_W_i_j // restore previous value
+
+        // Compute the partial derivative
+        gradient(i,j) = (fxh - fx) / h
       })
     })
+
+    // Return the calculated gradient
+    gradient
   }
 
   // Training function
