@@ -17,11 +17,11 @@ import breeze.numerics._
 class SVM {
 
   // Loss function for a single sample data point
-  // @param x - Single column vector (D x 1) of pixel values from sample image
+  // @param x - Single column vector ((D + 1) x 1) of pixel values from sample image
   // @param y - index of correct class (within range 0 to K)
-  // @param W - trained model (W) parameters (K x D)
+  // @param W - trained model (W) parameters (K x (D + 1))
   // @return Li - calculated loss across all classes for single data sample
-  private def lossSingleSample(x: DenseVector[Double], y: Integer, W: DenseMatrix[Double]): Double = {
+  private def loss_single_sample(x: DenseVector[Double], y: Integer, W: DenseMatrix[Double]): Double = {
     // Set delta
     val delta: Double = 1.0
 
@@ -56,7 +56,7 @@ class SVM {
     // Compute summed loss across all data points
     val data_loss = x.zipWithIndex.map(X_zipped =>
       X_zipped match {
-        case (x_i, i) => lossSingleSample(x_i, y(i), W)
+        case (x_i, i) => loss_single_sample(x_i, y(i), W)
       }
     ).fold(0.0)(_ + _) * (1.0 / x.length)
 
@@ -65,6 +65,24 @@ class SVM {
 
     // return raw data loss
     data_loss + regularization_loss
+  }
+
+  // Numerical gradient (for gradient checking)
+  // @param f - curried closure over loss function
+  // @param W - trained model (W) parameters (K x (D + 1))
+  // @return dW - the numerically derived gradient vector at value x (K X (D + 1))
+  private def numerical_gradient(f: (x: Array[DenseVector[Double]], y: Array[Int]) => Double, W: DenseMatrix[Double]): DenseMatrix[Double] = {
+    // Initialize local variables
+    var fx = f(W) // Get loss value at original W
+    var dW = DenseMatrix.zeros(W.shape) // Initialize random gradient
+    var h = 0.00001 // arbitrary small h (to simulate limit)
+
+    // Iterate over all values of W -- change one at a time
+    (0 to W(::, 0).length).foreach(i => {
+      (0 to W(0, ::).length).foreach(j => {
+        // Set index
+      })
+    })
   }
 
   // Training function
