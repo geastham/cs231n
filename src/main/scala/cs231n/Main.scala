@@ -2,6 +2,7 @@ package cs231n
 
 import cs231n.nearestneighbor.NearestNeighbor
 import cs231n.svm.SVM
+import cs231n.nn.NeuralNetwork
 import cs231n.data.LabeledImage
 import cs231n.utils.VectorUtils
 
@@ -9,7 +10,6 @@ import cs231n.utils.VectorUtils
 import breeze.linalg._
 import breeze.math._
 import breeze.numerics._
-
 
 // Data processing
 import scala.io.Source
@@ -59,9 +59,18 @@ object Main extends App {
   })
 
   // Train classifier (NearestNeighbor)
-  println("Training classifier...")
-  val svm = new SVM
-  svm.train(trainingImages, 10)
+  //println("Training classifier...")
+  //val nearestneighbor = new NearestNeighbor
+  //nearestneighbor.train(trainingImages, 10)
+
+  // Train classifier (SVM)
+  //println("Training classifier...")
+  //val svm = new SVM
+  //svm.train(trainingImages, 10)
+
+  // Train classifier (Neural Network)
+  println("Training Neural Network...")
+  val nn = NeuralNetwork(4, 8, 10)
 
   // Predict test values
   /*println("Making predictions...")
