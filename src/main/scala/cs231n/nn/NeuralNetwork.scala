@@ -9,12 +9,12 @@ import breeze.numerics._
 
 /*
  *    ===============================================================================================
- *    
+ *
  *    Neural Network Classifier
  *    -------------------------
  *    Exposes two methods (train, predict) that take a training setup
- *    of images and builds a simple 2-layer neural network model and 
- *    enables that model to naively predict the class of a given image 
+ *    of images and builds a simple 2-layer neural network model and
+ *    enables that model to naively predict the class of a given image
  *    (from predict).
  *
  *    ===============================================================================================
@@ -31,7 +31,7 @@ class NeuralNetwork(
   var b_1: DenseVector[Double],
 
   //Layer 2
-  var W_2: DenseMatrix[Double], 
+  var W_2: DenseMatrix[Double],
   var b_2: DenseVector[Double]) {
 
 }
@@ -50,7 +50,7 @@ object NeuralNetwork {
    *  Private helper method around a tanh activation function to support
    *  matrix multiplication.
    */
-  private def tanh(x: DenseMatrix[Double]): DenseMatrix[Double] = {
+  private def tanh(m: DenseMatrix[Double]): DenseMatrix[Double] = {
     return 4.0 * sigmoid(x) - 1.0
   }
 
@@ -60,8 +60,8 @@ object NeuralNetwork {
    *  Private helper method around an ReLU activation function to
    *  support matrix multiplication.
    */
-  private def ReLU(x: DenseMatrix[Double]): DenseMatrix[Double] = {
-    return max(0, x)
+  private def ReLU(m: DenseMatrix[Double]): DenseMatrix[Double] = {
+    return DenseMatrix.tabulate(m.rows, m.cols) { case (i,j) => max(0, m(i,j)) }
   }
 
   /*
@@ -87,7 +87,7 @@ object NeuralNetwork {
    *
    *  @return success -- Boolean flag determining whether traiing was successful
    */
-  
+
   def train(training_images: Array[LabeledImage]): Boolean = {
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
     val biased_training_data = training_images.map(i => {
@@ -117,7 +117,7 @@ object NeuralNetwork {
     println("Initializing network layers...")
 
     // 1) Initialize layer 1 matrices - W_1
-    var W_1 = DenseMatrix.rand(hidden_size, input_size) * Math.sqrt(2.0 / input_size) 
+    var W_1 = DenseMatrix.rand(hidden_size, input_size) * Math.sqrt(2.0 / input_size)
     println("\n1) W_1...")
     println(W_1)
 
@@ -127,7 +127,7 @@ object NeuralNetwork {
     println(b_1)
 
     // 3) Initialize layer 2 matrices - W_2
-    var W_2 = DenseMatrix.rand(output_size, hidden_size) * Math.sqrt(2.0 / input_size) 
+    var W_2 = DenseMatrix.rand(output_size, hidden_size) * Math.sqrt(2.0 / input_size)
     println("\n3) W_2...")
     println(W_2)
 
@@ -140,7 +140,3 @@ object NeuralNetwork {
     return new NeuralNetwork(W_1, b_1, W_2, b_2)
   }
 }
-
-
-
-
