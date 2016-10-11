@@ -51,7 +51,7 @@ object NeuralNetwork {
    *  matrix multiplication.
    */
   private def tanh(m: DenseMatrix[Double]): DenseMatrix[Double] = {
-    return 4.0 * sigmoid(x) - 1.0
+    return 4.0 * sigmoid(m) - 1.0
   }
 
   /*
@@ -61,7 +61,7 @@ object NeuralNetwork {
    *  support matrix multiplication.
    */
   private def ReLU(m: DenseMatrix[Double]): DenseMatrix[Double] = {
-    return DenseMatrix.tabulate(m.rows, m.cols) { case (i,j) => max(0, m(i,j)) }
+    return DenseMatrix.tabulate(m.rows, m.cols) { case (i,j) => if(m(i,j) < 0) 0.0 else m(i,j) }
   }
 
   /*
