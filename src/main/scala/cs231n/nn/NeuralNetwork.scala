@@ -45,16 +45,6 @@ class NeuralNetwork(
 object NeuralNetwork {
 
   /*
-   *  Sigmoid Activation Function
-   *  ---------------------------
-   *  Private helper method around a sigmoid activation function to
-   *  support matrix multiplication.
-   */
-  private def sigmoid(x: DenseMatrix[Double]): DenseMatrix[Double] = {
-    return 1.0 / (1 + Math.exp(-1.0 * x))
-  }
-
-  /*
    *  Tanh Activation Function
    *  ---------------------------
    *  Private helper method around a tanh activation function to support
