@@ -45,6 +45,36 @@ class NeuralNetwork(
 object NeuralNetwork {
 
   /*
+   *  Sigmoid Activation Function
+   *  ---------------------------
+   *  Private helper method around a sigmoid activation function to
+   *  support matrix multiplication.
+   */
+  private def sigmoid(x: DenseMatrix[Double]): DenseMatrix[Double] = {
+    return 1.0 / (1 + Math.exp(-1.0 * x))
+  }
+
+  /*
+   *  Tanh Activation Function
+   *  ---------------------------
+   *  Private helper method around a tanh activation function to support
+   *  matrix multiplication.
+   */
+  private def tanh(x: DenseMatrix[Double]): DenseMatrix[Double] = {
+    return 4.0 * sigmoid(x) - 1.0
+  }
+
+  /*
+   *  ReLU Activation Function
+   *  ------------------------
+   *  Private helper method around an ReLU activation function to
+   *  support matrix multiplication.
+   */
+  private def ReLU(x: DenseMatrix[Double]): DenseMatrix[Double] = {
+    return max(0, x)
+  }
+
+  /*
    *  Loss Function
    *  -------------
    *  @param x - Array of column vectors ((D + 1) x 1) of pixel values from image dataset of size N
@@ -97,22 +127,22 @@ object NeuralNetwork {
     println("Initializing network layers...")
 
     // 1) Initialize layer 1 matrices - W_1
-    var W_1 = DenseMatrix.rand(input_size, hidden_size) * Math.sqrt(2.0 / input_size) 
+    var W_1 = DenseMatrix.rand(hidden_size, input_size) * Math.sqrt(2.0 / input_size) 
     println("\n1) W_1...")
     println(W_1)
 
     // 2) Initialize layer 1 bias -- B_1
-    var b_1 = DenseVector.zeros[Double](input_size)
+    var b_1 = DenseVector.zeros[Double](hidden_size)
     println("\n2) b_1...")
     println(b_1)
 
     // 3) Initialize layer 2 matrices - W_2
-    var W_2 = DenseMatrix.rand(hidden_size, output_size) * Math.sqrt(2.0 / input_size) 
+    var W_2 = DenseMatrix.rand(output_size, hidden_size) * Math.sqrt(2.0 / input_size) 
     println("\n3) W_2...")
     println(W_2)
 
     // 4) Initialize layer 2 matrixes -- B_1
-    var b_2 = DenseVector.zeros[Double](hidden_size)
+    var b_2 = DenseVector.zeros[Double](output_size)
     println("\n4) b_1...")
     println(b_2)
 

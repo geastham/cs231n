@@ -68,9 +68,16 @@ object Main extends App {
   //val svm = new SVM
   //svm.train(trainingImages, 10)
 
+  // Create test data (from two_layer_net.ipynb example)
+  val sampleImage = DenseVector(16.24345364,  -6.11756414,  -5.28171752, -10.72968622)
+  val sampleImages = DenseMatrix((16.24345364,  -6.11756414,  -5.28171752, -10.72968622),
+                                  (8.65407629, -23.01538697,  17.44811764,  -7.61206901),
+                                  (3.19039096,  -2.49370375,  14.62107937, -20.60140709))
+
   // Train classifier (Neural Network)
-  println("Training Neural Network...")
-  val nn = NeuralNetwork(4, 8, 10)
+  println("Training Neural Network...\n")
+  //val nn = NeuralNetwork(trainingImages(0).inputSize, trainingImages(0).inputSize * 2, 10)
+  val nn = NeuralNetwork(4, 5, 3)
 
   // Predict test values
   /*println("Making predictions...")

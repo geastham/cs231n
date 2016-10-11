@@ -44,6 +44,9 @@ class LabeledImage(labelValue: Int, redValues: Array[Double], greenValues: Array
 
   // Data vector -- used in
   def data: Array[Double] = redValues ++ greenValues ++ blueValues
+
+  // Input size
+  def inputSize: Integer = this.data.length
 }
 
 // Sample image
