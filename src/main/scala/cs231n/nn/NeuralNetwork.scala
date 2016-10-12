@@ -65,16 +65,42 @@ object NeuralNetwork {
   }
 
   /*
+   *  Forward Pass Function
+   *  ------------------------------------
+   *  Conducts a forward pass through the neural network using the input values x
+   *
+   *  @param x -- Input vector of pixel values from image dataset
+   *
+   *  @return F_i -- Final output activation vector derived from the forward pass on the network at input x
+   */
+  private def forward_pass(x: DenseVector[Double]): DenseVector[Double] = {
+    return DenseVector.zeros[Double](1)
+  }
+
+  /*
+   *  Single Loss Function (Cross-Entropy)
+   *  ------------------------------------
+   *  Calculates the loss of a single input x (using Soft-Max cross entropy) model.
+   *
+   *  @param x -- Input vector of pixel values from image dataset
+   *  @param F_i -- Final output activation vector derived from the forward pass on the network at input x
+   *
+   *  @return Li -- Total loss (double) for a single input
+   */
+  private def loss_i(x: DenseVector[Double], F_i: DenseVector[Double]): Double = {
+    return 0.0
+  }
+
+  /*
    *  Loss Function
    *  -------------
-   *  @param x - Array of column vectors ((D + 1) x 1) of pixel values from image dataset of size N
+   *  @param x - Array of column vectors (D x 1) of pixel values from image dataset of size N
    *  @param y - Array of correct class indices (within range 0 to K)
-   *  @param W - trained model (W) parameters (K x (D + 1))
    *  @param lambda - Double representing the regularization weight
    *
    *  @return L - calculated loss across all N data samples
    */
-  private def loss(x: Array[DenseVector[Double]], y: Array[Int], W: DenseMatrix[Double], lambda: Double): Double = {
+  private def loss(x: Array[DenseVector[Double]], y: Array[Int], lambda: Double): Double = {
     // To Implement
     return 0.0
   }
