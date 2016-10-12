@@ -82,13 +82,14 @@ object NeuralNetwork {
    *  ------------------------------------
    *  Calculates the loss of a single input x (using Soft-Max cross entropy) model.
    *
-   *  @param x -- Input vector of pixel values from image dataset
+   *  @param X_i -- Input vector of pixel values from image dataset
    *  @param F_i -- Final output activation vector derived from the forward pass on the network at input x
+   *  @param y_i -- Index (Integer) of the correct class output on the K dimensional output activations F_i
    *
    *  @return Li -- Total loss (double) for a single input
    */
-  private def loss_i(x: DenseVector[Double], F_i: DenseVector[Double]): Double = {
-    return 0.0
+  private def loss_i(X_i: DenseVector[Double], F_i: DenseVector[Double], y_i: Integer): Double = {
+    return (-1.0 * F_i(y_i)) + log(sum(exp(F_i)))
   }
 
   /*
