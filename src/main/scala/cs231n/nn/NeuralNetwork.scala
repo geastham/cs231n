@@ -69,11 +69,11 @@ object NeuralNetwork {
    *  ------------------------------------
    *  Conducts a forward pass through the neural network using the input values x
    *
-   *  @param x -- Input vector of pixel values from image dataset
+   *  @param X_i -- Input vector of pixel values from image dataset
    *
    *  @return F_i -- Final output activation vector derived from the forward pass on the network at input x
    */
-  private def forward_pass(x: DenseVector[Double]): DenseVector[Double] = {
+  private def forward_pass(X_i: DenseVector[Double]): DenseVector[Double] = {
     return DenseVector.zeros[Double](1)
   }
 
@@ -89,21 +89,31 @@ object NeuralNetwork {
    *  @return Li -- Total loss (double) for a single input
    */
   private def loss_i(X_i: DenseVector[Double], F_i: DenseVector[Double], y_i: Integer): Double = {
-    return (-1.0 * F_i(y_i)) + log(sum(exp(F_i)))
+    (-1.0 * F_i(y_i)) + log(sum(exp(F_i)))
   }
 
   /*
    *  Loss Function
    *  -------------
-   *  @param x - Array of column vectors (D x 1) of pixel values from image dataset of size N
-   *  @param y - Array of correct class indices (within range 0 to K)
+   *  @param X - Array of column vectors (D x 1) of pixel values from image dataset of size N
+   *  @param Y - Array of correct class indices (within range 0 to K)
    *  @param lambda - Double representing the regularization weight
    *
    *  @return L - calculated loss across all N data samples
    */
-  private def loss(x: Array[DenseVector[Double]], y: Array[Int], lambda: Double): Double = {
-    // To Implement
-    return 0.0
+  private def loss(X: Array[DenseVector[Double]], Y: Array[Int], lambda: Double): Double = {
+    // Compute summed loss across all data points
+    val data_loss = X.zipWithIndex.map(X_zipped =>
+      X_zipped match {
+        case (X_i, i) => loss_i(X_i, forward_pass(X_i), Y(i))
+      }
+    ).fold(0.0)(_ + _) * (1.0 / X.length)
+
+    // Compute L2 regularization cost
+    val regularization_loss = (0.5 * lambda * this.W_1.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _)) + (0.5 * lambda *  this.W_2.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _))
+
+    // Return total loss
+    data_loss + regularization_loss
   }
 
   /*
