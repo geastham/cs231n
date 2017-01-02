@@ -3,6 +3,7 @@ package cs231n
 import cs231n.nearestneighbor.NearestNeighbor
 import cs231n.svm.SVM
 import cs231n.nn.NeuralNetwork
+import cs231n.cnn.ConvolutionalNeuralNetwork
 import cs231n.data.LabeledImage
 import cs231n.utils.VectorUtils
 
