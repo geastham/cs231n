@@ -89,7 +89,7 @@ object NeuralNetwork {
    *  @return Li -- Total loss (double) for a single input
    */
   private def loss_i(X_i: DenseVector[Double], F_i: DenseVector[Double], y_i: Integer): Double = {
-    (-1.0 * F_i(y_i)) + log(sum(exp(F_i)))
+    (-1.0 * F_i(y_i.toInt)) + log(sum(exp(F_i)))
   }
 
   /*
@@ -103,11 +103,9 @@ object NeuralNetwork {
    */
   private def loss(X: Array[DenseVector[Double]], Y: Array[Int], NN: NeuralNetwork, lambda: Double): Double = {
     // Compute summed loss across all data points
-    val data_loss = X.zipWithIndex.map(X_zipped =>
-      X_zipped match {
-        case (X_i, i) => loss_i(X_i, forward_pass(X_i), Y(i))
-      }
-    ).fold(0.0)(_ + _) * (1.0 / X.length)
+    val data_loss = X.zipWithIndex.map {
+      case (x_i, i) => loss_i(x_i, forward_pass(x_i), Y(i))
+    }.fold(0.0)(_ + _) * (1.0 / X.length)
 
     // Compute L2 regularization cost
     val regularization_loss = (0.5 * lambda * NN.W_1.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _)) + (0.5 * lambda *  NN.W_2.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _))
