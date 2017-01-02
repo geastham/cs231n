@@ -36,7 +36,7 @@ object Main extends App {
   }
 
   // File paths
-  val trainingImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-train.txt"
+  val trainingImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-train-100.txt"
   val testImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-test.txt"
 
   // Data (in-memory -- not great, but can fix later with spark implementation)

@@ -101,7 +101,7 @@ object NeuralNetwork {
    *
    *  @return L - calculated loss across all N data samples
    */
-  private def loss(X: Array[DenseVector[Double]], Y: Array[Int], lambda: Double): Double = {
+  private def loss(X: Array[DenseVector[Double]], Y: Array[Int], NN: NeuralNetwork, lambda: Double): Double = {
     // Compute summed loss across all data points
     val data_loss = X.zipWithIndex.map(X_zipped =>
       X_zipped match {
@@ -110,7 +110,7 @@ object NeuralNetwork {
     ).fold(0.0)(_ + _) * (1.0 / X.length)
 
     // Compute L2 regularization cost
-    val regularization_loss = (0.5 * lambda * this.W_1.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _)) + (0.5 * lambda *  this.W_2.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _))
+    val regularization_loss = (0.5 * lambda * NN.W_1.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _)) + (0.5 * lambda *  NN.W_2.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _))
 
     // Return total loss
     data_loss + regularization_loss

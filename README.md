@@ -5,9 +5,8 @@ I've chosen to implement this project using the Scala / Spark ecosystem with the
   * Scala 2.10.0
   * ScalaTest 2.0.M5b (current ScalaTest 2.0 beta version)
   * ScalaNLP [Breeze](http://www.scalanlp.org/)
-  * Apache Spark 1.4.2
-  * SparkNet 1.2.0
-  * Berkeley [Caffe](http://caffe.berkeleyvision.org/)
+  * Apache Spark 1.6.1
+  * DMLC [MXNet](http://www.mxnet.io/)
 
 ## Quick Setup
 
