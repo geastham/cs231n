@@ -123,7 +123,7 @@ object NeuralNetwork {
    *  @return success -- Boolean flag determining whether traiing was successful
    */
 
-  def train(training_images: Array[LabeledImage]): Boolean = {
+  def train(training_images: Array[LabeledImage], number_of_classes: Int): Boolean = {
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
     val biased_training_data = training_images.map(i => {
       DenseVector(i.data)

@@ -42,8 +42,12 @@ class LabeledImage(labelValue: Int, redValues: Array[Double], greenValues: Array
   // Label accessor
   def label: Int = labelValue // return instantiated label
 
-  // Data vector -- used in
+  // Data vector -- used in flat neural network models
   def data: Array[Double] = redValues ++ greenValues ++ blueValues
+
+  // 3D Data vector -- used in convolutional nerual network models
+  // -- note: Array[Red, Green, Blue]
+  def data3D: Array[Double, Double, Double] = Array(redValues, greenValues, blueValues)
 
   // Input size
   def inputSize: Integer = this.data.length
