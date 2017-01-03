@@ -16,5 +16,7 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-natives" % "0.12",
   // the visualization library is distributed separately as well.
   // It depends on LGPL code.
-  "org.scalanlp" %% "breeze-viz" % "0.12"
+  "org.scalanlp" %% "breeze-viz" % "0.12",
+  // https://mvnrepository.com/artifact/ml.dmlc.mxnet/libmxnet-scala-linux-x86_64-gpu
+  "ml.dmlc.mxnet" % "libmxnet-scala-linux-x86_64-gpu" % "0.1.1"
 )

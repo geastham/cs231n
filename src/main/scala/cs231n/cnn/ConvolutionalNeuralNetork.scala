@@ -2,6 +2,10 @@ package cs231n.cnn
 
 import cs231n.data.LabeledImage
 
+// Import MXNet dependencies
+import ml.dmlc.mxnet._
+import ml.dmlc.mxnet.optimizer.SGD
+
 /*
  *    ===============================================================================================
  *
