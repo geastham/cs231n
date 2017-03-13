@@ -11,6 +11,7 @@ import cs231n.utils.VectorUtils
 import breeze.linalg._
 import breeze.math._
 import breeze.numerics._
+import breeze.stats._
 
 // Data processing
 import scala.io.Source
@@ -31,13 +32,19 @@ object Main extends App {
 
     // Subtract the mean image from each labeled image and return tuple
     (meanVectorImage, images.map(i => {
-      val processedRGBValues = (DenseVector(i.data) - meanVectorImage).toArray
+      // Center vector around mean
+      val centeredVector = (DenseVector(i.data) - meanVectorImage)
+
+      // Normalize vector
+      val standardDeviation = stddev(centeredVector)
+      val processedRGBValues = centeredVector.toArray.map(x => x / standardDeviation)
+
       new LabeledImage(i.label, processedRGBValues.slice(0, 1024), processedRGBValues.slice(1024, 2048), processedRGBValues.slice(2048, 3072))
     }))
   }
 
   // File paths
-  val trainingImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-train-100.txt"
+  val trainingImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-train.txt"
   val testImagesFilePath = new java.io.File( "." ).getCanonicalPath + "/data/cifar10-test.txt"
 
   // Data (in-memory -- not great, but can fix later with spark implementation)
@@ -46,18 +53,15 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(100))
+  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(2))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
-  val (meanVectorImage, processedTrainingImages) = preProcessImages(trainingImages)
+  val (meanTrainImage, processedTrainingImages) = preProcessImages(trainingImages)
 
   // Load training data -- add to test set
   println("Loading test data...")
   for(line <- Source.fromFile(testImagesFilePath).getLines().take(1))
     testImages = testImages ++ Array(LabeledImage(line))
-  val processedTestImages = testImages.map(i => {
-    val processedRGBValues = (DenseVector(i.data) - meanVectorImage).toArray
-    new LabeledImage(i.label, processedRGBValues.slice(0, 1024), processedRGBValues.slice(1024, 2048), processedRGBValues.slice(2048, 3072))
-  })
+  val (meanTestImage, processedTestImages) = preProcessImages(testImages)
 
   // Train classifier (NearestNeighbor)
   //println("Training classifier...")
@@ -70,15 +74,16 @@ object Main extends App {
   //svm.train(trainingImages, 10)
 
   // Create test data (from two_layer_net.ipynb example)
-  val sampleImage = DenseVector(16.24345364,  -6.11756414,  -5.28171752, -10.72968622)
+  /*val sampleImage = DenseVector(16.24345364,  -6.11756414,  -5.28171752, -10.72968622)
   val sampleImages = DenseMatrix((16.24345364,  -6.11756414,  -5.28171752, -10.72968622),
                                   (8.65407629, -23.01538697,  17.44811764,  -7.61206901),
-                                  (3.19039096,  -2.49370375,  14.62107937, -20.60140709))
+                                  (3.19039096,  -2.49370375,  14.62107937, -20.60140709))*/
 
   // Train classifier (Neural Network)
   println("Training Neural Network...\n")
-  //val nn = NeuralNetwork(trainingImages(0).inputSize, trainingImages(0).inputSize * 2, 10)
-  val nn = NeuralNetwork(4, 5, 3)
+  val nn = NeuralNetwork(processedTrainingImages(0).inputSize, processedTrainingImages(0).inputSize * 2, 10)
+  //val nn = NeuralNetwork(4, 5, 3)
+  NeuralNetwork.train(processedTrainingImages, 10, nn)
 
   // Predict test values
   /*println("Making predictions...")

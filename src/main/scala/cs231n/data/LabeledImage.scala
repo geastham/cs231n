@@ -46,8 +46,7 @@ class LabeledImage(labelValue: Int, redValues: Array[Double], greenValues: Array
   def data: Array[Double] = redValues ++ greenValues ++ blueValues
 
   // 3D Data vector -- used in convolutional nerual network models
-  // -- note: Array[Red, Green, Blue]
-  def data3D: Array[Double, Double, Double] = Array(redValues, greenValues, blueValues)
+  //def data3D: (Array[Double], Array[Double], Array[Double]) = (redValues, greenValues, blueValues)
 
   // Input size
   def inputSize: Integer = this.data.length

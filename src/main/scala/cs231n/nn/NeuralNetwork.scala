@@ -73,8 +73,17 @@ object NeuralNetwork {
    *
    *  @return F_i -- Final output activation vector derived from the forward pass on the network at input x
    */
-  private def forward_pass(X_i: DenseVector[Double]): DenseVector[Double] = {
-    return DenseVector.zeros[Double](1)
+  private def forward_pass(X_i: DenseVector[Double], NN: NeuralNetwork): DenseVector[Double] = {
+    // Compute layer 1
+    val h_1 = NN.W_1 * X_i + NN.b_1
+
+    // Compute final activations
+    val f = NN.W_2 * h_1 + NN.b_2
+    println("\n--> f")
+    println(f)
+
+    // Return activations
+    return f
   }
 
   /*
@@ -89,6 +98,8 @@ object NeuralNetwork {
    *  @return Li -- Total loss (double) for a single input
    */
   private def loss_i(X_i: DenseVector[Double], F_i: DenseVector[Double], y_i: Integer): Double = {
+    println("\n-- Determining loss for image:")
+    //println(X_i)
     (-1.0 * F_i(y_i.toInt)) + log(sum(exp(F_i)))
   }
 
@@ -101,10 +112,10 @@ object NeuralNetwork {
    *
    *  @return L - calculated loss across all N data samples
    */
-  private def loss(X: Array[DenseVector[Double]], Y: Array[Int], NN: NeuralNetwork, lambda: Double): Double = {
+  private def loss(X: Array[DenseVector[Double]], Y: Array[Int], lambda: Double, NN: NeuralNetwork): Double = {
     // Compute summed loss across all data points
     val data_loss = X.zipWithIndex.map {
-      case (x_i, i) => loss_i(x_i, forward_pass(x_i), Y(i))
+      case (x_i, i) => loss_i(x_i, forward_pass(x_i, NN), Y(i))
     }.fold(0.0)(_ + _) * (1.0 / X.length)
 
     // Compute L2 regularization cost
@@ -123,14 +134,18 @@ object NeuralNetwork {
    *  @return success -- Boolean flag determining whether traiing was successful
    */
 
-  def train(training_images: Array[LabeledImage], number_of_classes: Int): Boolean = {
+  def train(training_images: Array[LabeledImage], number_of_classes: Int, NN: NeuralNetwork): Boolean = {
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
-    val biased_training_data = training_images.map(i => {
+    val training_data = training_images.map(i => {
       DenseVector(i.data)
     })
 
     // Generate training labels
     val training_labels = training_images.map(i => i.label)
+
+    // Calculate loss
+    val computed_loss = loss(training_data, training_labels, 0.0, NN)
+    println("Computed loss: " + computed_loss)
 
     // Return status of training
     return true
@@ -153,23 +168,23 @@ object NeuralNetwork {
 
     // 1) Initialize layer 1 matrices - W_1
     var W_1 = DenseMatrix.rand(hidden_size, input_size) * Math.sqrt(2.0 / input_size)
-    println("\n1) W_1...")
-    println(W_1)
+    //println("\n1) W_1...")
+    //println(W_1)
 
     // 2) Initialize layer 1 bias -- B_1
     var b_1 = DenseVector.zeros[Double](hidden_size)
-    println("\n2) b_1...")
-    println(b_1)
+    //println("\n2) b_1...")
+    //println(b_1)
 
     // 3) Initialize layer 2 matrices - W_2
     var W_2 = DenseMatrix.rand(output_size, hidden_size) * Math.sqrt(2.0 / input_size)
-    println("\n3) W_2...")
-    println(W_2)
+    //println("\n3) W_2...")
+    //println(W_2)
 
     // 4) Initialize layer 2 matrixes -- B_1
     var b_2 = DenseVector.zeros[Double](output_size)
-    println("\n4) b_1...")
-    println(b_2)
+    //println("\n4) b_2...")
+    //println(b_2)
 
     // Return new NeuralNetwork
     return new NeuralNetwork(W_1, b_1, W_2, b_2)
