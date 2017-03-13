@@ -50,7 +50,7 @@ object NeuralNetwork {
    *  Private helper method around a tanh activation function to support
    *  matrix multiplication.
    */
-  private def tanh(m: DenseMatrix[Double]): DenseMatrix[Double] = {
+  private def tanh(m: DenseVector[Double]): DenseVector[Double] = {
     return 4.0 * sigmoid(m) - 1.0
   }
 
@@ -60,8 +60,8 @@ object NeuralNetwork {
    *  Private helper method around an ReLU activation function to
    *  support matrix multiplication.
    */
-  private def ReLU(m: DenseMatrix[Double]): DenseMatrix[Double] = {
-    return DenseMatrix.tabulate(m.rows, m.cols) { case (i,j) => if(m(i,j) < 0) 0.0 else m(i,j) }
+  private def ReLU(m: DenseVector[Double]): DenseVector[Double] = {
+    return DenseVector.tabulate(m.length) { i => if(m(i) < 0) 0.0 else m(i) }
   }
 
   /*
@@ -74,8 +74,8 @@ object NeuralNetwork {
    *  @return F_i -- Final output activation vector derived from the forward pass on the network at input x
    */
   private def forward_pass(X_i: DenseVector[Double], NN: NeuralNetwork): DenseVector[Double] = {
-    // Compute layer 1
-    val h_1 = NN.W_1 * X_i + NN.b_1
+    // Compute first layer activations
+    val h_1 = tanh(NN.W_1 * X_i + NN.b_1)
 
     // Compute final activations
     val f = NN.W_2 * h_1 + NN.b_2
@@ -98,8 +98,6 @@ object NeuralNetwork {
    *  @return Li -- Total loss (double) for a single input
    */
   private def loss_i(X_i: DenseVector[Double], F_i: DenseVector[Double], y_i: Integer): Double = {
-    println("\n-- Determining loss for image:")
-    //println(X_i)
     (-1.0 * F_i(y_i.toInt)) + log(sum(exp(F_i)))
   }
 
@@ -144,7 +142,7 @@ object NeuralNetwork {
     val training_labels = training_images.map(i => i.label)
 
     // Calculate loss
-    val computed_loss = loss(training_data, training_labels, 0.0, NN)
+    val computed_loss = loss(training_data, training_labels, 0.001, NN)
     println("Computed loss: " + computed_loss)
 
     // Return status of training

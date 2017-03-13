@@ -53,7 +53,7 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(2))
+  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(10))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
   val (meanTrainImage, processedTrainingImages) = preProcessImages(trainingImages)
 
