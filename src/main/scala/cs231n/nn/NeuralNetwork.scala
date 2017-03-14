@@ -75,10 +75,13 @@ object NeuralNetwork {
    */
   private def forward_pass(X_i: DenseVector[Double], NN: NeuralNetwork): DenseVector[Double] = {
     // Compute first layer activations
-    val h_1 = tanh(NN.W_1 * X_i + NN.b_1)
+    val h_1 = sigmoid(NN.W_1 * X_i + NN.b_1)
 
     // Compute final activations
-    val f = NN.W_2 * h_1 + NN.b_2
+    var f = NN.W_2 * h_1 + NN.b_2
+
+    // Normalize probabilities
+    f = f / sum(f)
     println("\n--> f")
     println(f)
 
@@ -107,6 +110,7 @@ object NeuralNetwork {
    *  @param X - Array of column vectors (D x 1) of pixel values from image dataset of size N
    *  @param Y - Array of correct class indices (within range 0 to K)
    *  @param lambda - Double representing the regularization weight
+   *  @param NN - Neural network
    *
    *  @return L - calculated loss across all N data samples
    */
