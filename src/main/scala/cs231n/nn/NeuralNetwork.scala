@@ -70,6 +70,7 @@ object NeuralNetwork {
    *  Conducts a forward pass through the neural network using the input values x
    *
    *  @param X_i -- Input vector of pixel values from image dataset
+   *  @param NN - Neural network
    *
    *  @return F_i -- Final output activation vector derived from the forward pass on the network at input x
    */
@@ -79,14 +80,65 @@ object NeuralNetwork {
 
     // Compute final activations
     var f = NN.W_2 * h_1 + NN.b_2
-
-    // Normalize probabilities
-    f = f / sum(f)
     println("\n--> f")
     println(f)
 
     // Return activations
     return f
+  }
+
+  /*
+   *  Class Probabilities
+   *  ------------------------------------
+   *  Returns the normalized class probabilities computed by the provided Neural Network
+   *
+   *  @param X_i -- Input vector of pixel values from image dataset
+   *  @param NN - Neural network
+   *
+   *  @return P_i -- Normalized probabilities for classes of a given input X
+   */
+  private def probs(X_i: DenseVector[Double], NN: NeuralNetwork): DenseVector[Double] = {
+    // Get raw scores F
+    val F = forward_pass(X_i, NN)
+
+    // Raise to E
+    val exp_scores = exp(F)
+
+    // Normalize
+    val probs = exp_scores / sum(exp_scores)
+    println("\n--> probs")
+    println(probs)
+
+    // Return probabilities
+    return probs
+  }
+
+  /*
+   *  Gradient (Analytical)
+   *  ------------------------------------
+   *  Returns the derived analytical gradient updates for a given Neural Network
+   *
+   *  @param X_i -- Input vector of pixel values from image dataset
+   *  @param y_i -- Index (Integer) of the correct class output on the K dimensional output activations F_i
+   *  @param lambda - Double representing the regularization weight
+   *  @param NN - Neural network
+   *
+   *  @return (dW_1, db_1, dW_2, db_2) -- Normalized probabilities for classes of a given input X
+   */
+  private def gradient(X_i: DenseVector[Double], y_i: Integer, lambda: Double, NN: NeuralNetwork): (DenseMatrix[Double], DenseVector[Double], DenseMatrix[Double], DenseVector[Double]) = {
+    // [1] Determine the gradient of the SoftMax output layer (cross-entropy based) at input X
+    var dscores = probs(X_i, NN)  // start with class probability scores (P_k)
+    dscores(y_i.toInt) -= 1 // dL_i / dF_k = P_k - 1(y_i = k) --> (K x 1)
+
+    // Calculate the activations for the hidden layer (W_1 * x + b)
+    val h_1 = sigmoid(NN.W_1 * X_i + NN.b_1) // --> (N x 1)
+
+    // [2] Backpropagate score gradient through second layer
+    val dW_2 = h_1.T * dscores
+    val db_2 = sum(dscores)
+
+    // [3] Backpropagate gradients through to first layer
+    val dhidden = 
   }
 
   /*
