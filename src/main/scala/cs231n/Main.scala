@@ -53,7 +53,8 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(10))
+  val batch_size = 5
+  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(batch_size))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
   val (meanTrainImage, processedTrainingImages) = preProcessImages(trainingImages)
 
@@ -81,7 +82,7 @@ object Main extends App {
 
   // Train classifier (Neural Network)
   println("Training Neural Network...\n")
-  val nn = NeuralNetwork(processedTrainingImages(0).inputSize, processedTrainingImages(0).inputSize * 2, 10, 10, 0)
+  val nn = NeuralNetwork(processedTrainingImages(0).inputSize, processedTrainingImages(0).inputSize * 2, 10, batch_size, 0)
   //val nn = NeuralNetwork(4, 5, 3)
   NeuralNetwork.train(processedTrainingImages, 10, nn)
 

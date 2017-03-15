@@ -80,8 +80,8 @@ object NeuralNetwork {
 
     // Compute final activations
     var f = h_1 * NN.W_2 + NN.b_2
-    println("\n--> f")
-    println(f)
+    //println("\n--> f")
+    //println(f)
 
     // Return activations
     return f
@@ -109,8 +109,8 @@ object NeuralNetwork {
 
     // Normalize
     val probs = DenseMatrix.tabulate(exp_scores.rows, exp_scores.cols) { (i,j) => exp_scores(i,j) / summed_scores(i) }
-    println("\n--> probs")
-    println(probs)
+    //println("\n--> probs")
+    //println(probs)
 
     // Return probabilities
     return probs
@@ -137,7 +137,16 @@ object NeuralNetwork {
     // Derive the gradient on probability scores: dL_i / dF_k = P_k - 1(y_i = k) --> (N x K)
     // * Note: We also divide by total number of examples within matrix calculation
     //         so we can encapsulate the average derivative changes within single matrix multiplications (next steps)
-    var dscores = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => if(j == Y(i).toInt) (p(i,j) - 1.0) / number_of_examples else p(i,j) / number_of_examples }
+    //val m = DenseMatrix.tabulate(3,4) { (i,j) => i + j }
+    var dscores = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => if(j == Y(i).toInt) {
+        //println("Y! - " + Y(i).toInt)
+        (p(i,j) - 1.0) / number_of_examples 
+      } else {
+        p(i,j) / number_of_examples
+      }
+    }
+    //println("\n--> dScores")
+    //println(dscores)
 
     // Calculate the activations for the hidden layer (X * W_1 + b_1)
     val h_1 = sigmoid(X * NN.W_1 + NN.b_1) // --> (N x hidden_size)
@@ -147,11 +156,13 @@ object NeuralNetwork {
     val summed_scores_b2 = sum(dscores, Axis._0) // (K x 1)
     val db_2 = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => summed_scores_b2(j) } // duplicate weight updates across all row examples (N x K)
     dW_2 += lambda * NN.W_2 // don't forget the regularization term (comes from global derivative on Loss function w.r.t. W_2)
+    //println("\n--> dW_2")
+    //println(dW_2)
 
     // Determine the global gradient at the hidden inputs --> (N x hidden_layers)
     //  * Notes: s(h) :* (1 - s(h)) is an elementwise multiplication
     val sigmoid_h = sigmoid(h_1)
-    val sigmoid_matrix = DenseMatrix.tabulate(sigmoid_h.rows, sigmoid_h.cols) { (i,j) => sigmoid_h(i,j) * (1 - sigmoid_h(i,j)) } // --> (N x hidden_size)
+    val sigmoid_matrix = DenseMatrix.tabulate(sigmoid_h.rows, sigmoid_h.cols) { (i,j) => sigmoid_h(i,j) * (1.0 - sigmoid_h(i,j)) } // --> (N x hidden_size)
     val dhidden_intermediate = dscores * NN.W_2.t // (N x K) * (hidden_size, K).t --> (N x hidden_size)
     val dhidden = DenseMatrix.tabulate(sigmoid_h.rows, sigmoid_h.cols) { (i,j) => dhidden_intermediate(i,j) * sigmoid_matrix(i,j) } // --> (N x hidden_layers)
 
@@ -160,6 +171,8 @@ object NeuralNetwork {
     val summed_scores_b1 = sum(dhidden, Axis._0) // (hidden_size x 1)
     val db_1 = DenseMatrix.tabulate(number_of_examples, h_1.cols) { (i,j) => summed_scores_b1(j) } // duplicate weight updates across all row examples (N x K)
     dW_1 += lambda * NN.W_1 // don't forget the regularization term (comes from global derivative on Loss function w.r.t. W_1)
+    //println("\n--> dW_1")
+    //println(dW_1)
 
     // Return final values
     (dW_1, db_1, dW_2, db_2)
@@ -221,7 +234,7 @@ object NeuralNetwork {
   def train(training_images: Array[LabeledImage], number_of_classes: Int, NN: NeuralNetwork): Boolean = {
     // Set training parameters
     val lambda = 0.0
-    val learning_rate = 1
+    val learning_rate = 0.1
 
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
     val training_data = training_images.map(i => {
@@ -230,27 +243,34 @@ object NeuralNetwork {
 
     // Generate training labels
     val training_labels = training_images.map(i => i.label)
+    training_labels.map(println)
 
-    // Calculate loss
+    // Calculate initial loss
     val computed_loss = loss(training_data, training_labels, lambda, NN)
-    println("Computed loss: " + computed_loss)
+    println("Computed (initial) loss: " + computed_loss)
 
-    // Calculate the gradient
-    val X = DenseMatrix.tabulate(training_data.length, training_data(0).length) { (i,j) => training_data(i)(j) } // (N x D)
-    val Y = DenseVector(training_labels)
-    val (dW_1, db_1, dW_2, db_2) = gradient(X, Y, lambda, NN)
+    // Create copy of NN
+    var updated_nn = new NeuralNetwork(NN.W_1, NN.b_1, NN.W_2, NN.b_2)
 
-    // Perform update and create new neural network
-    val updated_nn = new NeuralNetwork(
-      DenseMatrix.tabulate(NN.W_1.rows, NN.W_1.cols) { (i,j) => NN.W_1(i,j) + (learning_rate * dW_1(i,j)) },
-      DenseMatrix.tabulate(NN.b_1.rows, NN.b_1.cols) { (i,j) => NN.b_1(i,j) + (learning_rate * db_1(i,j)) },
-      DenseMatrix.tabulate(NN.W_2.rows, NN.W_2.cols) { (i,j) => NN.W_2(i,j) + (learning_rate * dW_2(i,j)) },
-      DenseMatrix.tabulate(NN.b_2.rows, NN.b_2.cols) { (i,j) => NN.b_2(i,j) + (learning_rate * db_2(i,j)) }
-    )
+    // Run training (on 10 epochs)
+    (0 to 5).map(i => {
+      // Calculate the gradient
+      val X = DenseMatrix.tabulate(training_data.length, training_data(0).length) { (i,j) => training_data(i)(j) } // (N x D)
+      val Y = DenseVector(training_labels)
+      val (dW_1, db_1, dW_2, db_2) = gradient(X, Y, lambda, updated_nn)
 
-    // Calculate updated loss
-    val updated_loss = loss(training_data, training_labels, lambda,updated_nn)
-    println("Computed (updated) loss: " + updated_loss)
+      // Perform update and create new neural network
+      updated_nn = new NeuralNetwork(
+        DenseMatrix.tabulate(updated_nn.W_1.rows, NN.W_1.cols) { (i,j) => updated_nn.W_1(i,j) - (learning_rate * dW_1(i,j)) },
+        DenseMatrix.tabulate(updated_nn.b_1.rows, NN.b_1.cols) { (i,j) => updated_nn.b_1(i,j) - (learning_rate * db_1(i,j)) },
+        DenseMatrix.tabulate(updated_nn.W_2.rows, NN.W_2.cols) { (i,j) => updated_nn.W_2(i,j) - (learning_rate * dW_2(i,j)) },
+        DenseMatrix.tabulate(updated_nn.b_2.rows, NN.b_2.cols) { (i,j) => updated_nn.b_2(i,j) - (learning_rate * db_2(i,j)) }
+      )
+
+      // Calculate updated loss
+      val updated_loss = loss(training_data, training_labels, lambda, updated_nn)
+      println("[" + i + "] Computed (updated) loss: " + updated_loss)
+    })
 
     // Return status of training
     return true
