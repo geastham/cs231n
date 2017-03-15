@@ -53,7 +53,7 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  val batch_size = 5
+  val batch_size = 100
   for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(batch_size))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
   val (meanTrainImage, processedTrainingImages) = preProcessImages(trainingImages)

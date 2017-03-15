@@ -138,8 +138,7 @@ object NeuralNetwork {
     // * Note: We also divide by total number of examples within matrix calculation
     //         so we can encapsulate the average derivative changes within single matrix multiplications (next steps)
     //val m = DenseMatrix.tabulate(3,4) { (i,j) => i + j }
-    var dscores = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => if(j == Y(i).toInt) {
-        //println("Y! - " + Y(i).toInt)
+    var dscores = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => if(j == Y(i)) {
         (p(i,j) - 1.0) / number_of_examples 
       } else {
         p(i,j) / number_of_examples
@@ -233,8 +232,8 @@ object NeuralNetwork {
 
   def train(training_images: Array[LabeledImage], number_of_classes: Int, NN: NeuralNetwork): Boolean = {
     // Set training parameters
-    val lambda = 0.0
-    val learning_rate = 0.1
+    val lambda = 0.001
+    val learning_rate = 0.001
 
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
     val training_data = training_images.map(i => {
@@ -243,7 +242,7 @@ object NeuralNetwork {
 
     // Generate training labels
     val training_labels = training_images.map(i => i.label)
-    training_labels.map(println)
+    //training_labels.map(println)
 
     // Calculate initial loss
     val computed_loss = loss(training_data, training_labels, lambda, NN)
@@ -253,7 +252,7 @@ object NeuralNetwork {
     var updated_nn = new NeuralNetwork(NN.W_1, NN.b_1, NN.W_2, NN.b_2)
 
     // Run training (on 10 epochs)
-    (0 to 5).map(i => {
+    (0 to 50).map(i => {
       // Calculate the gradient
       val X = DenseMatrix.tabulate(training_data.length, training_data(0).length) { (i,j) => training_data(i)(j) } // (N x D)
       val Y = DenseVector(training_labels)
