@@ -81,7 +81,7 @@ object Main extends App {
 
   // Train classifier (Neural Network)
   println("Training Neural Network...\n")
-  val nn = NeuralNetwork(processedTrainingImages(0).inputSize, processedTrainingImages(0).inputSize * 2, 10)
+  val nn = NeuralNetwork(processedTrainingImages(0).inputSize, processedTrainingImages(0).inputSize * 2, 10, 10, 0)
   //val nn = NeuralNetwork(4, 5, 3)
   NeuralNetwork.train(processedTrainingImages, 10, nn)
 

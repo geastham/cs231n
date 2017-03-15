@@ -28,11 +28,11 @@ import breeze.numerics._
 class NeuralNetwork(
   // Layer 1
   var W_1: DenseMatrix[Double],
-  var b_1: DenseVector[Double],
+  var b_1: DenseMatrix[Double],
 
   //Layer 2
   var W_2: DenseMatrix[Double],
-  var b_2: DenseVector[Double]) {
+  var b_2: DenseMatrix[Double]) {
 
 }
 
@@ -50,7 +50,7 @@ object NeuralNetwork {
    *  Private helper method around a tanh activation function to support
    *  matrix multiplication.
    */
-  private def tanh(m: DenseVector[Double]): DenseVector[Double] = {
+  private def tanh(m: DenseMatrix[Double]): DenseMatrix[Double] = {
     return 4.0 * sigmoid(m) - 1.0
   }
 
@@ -60,8 +60,8 @@ object NeuralNetwork {
    *  Private helper method around an ReLU activation function to
    *  support matrix multiplication.
    */
-  private def ReLU(m: DenseVector[Double]): DenseVector[Double] = {
-    return DenseVector.tabulate(m.length) { i => if(m(i) < 0) 0.0 else m(i) }
+  private def ReLU(m: DenseMatrix[Double]): DenseMatrix[Double] = {
+    return DenseMatrix.tabulate(m.rows, m.cols) { (i,j) => if(m(i,j) < 0) 0.0 else m(i,j) }
   }
 
   /*
@@ -69,17 +69,17 @@ object NeuralNetwork {
    *  ------------------------------------
    *  Conducts a forward pass through the neural network using the input values x
    *
-   *  @param X_i -- Input vector of pixel values from image dataset
+   *  @param X_i -- Input matrix of pixel values from image dataset
    *  @param NN - Neural network
    *
    *  @return F_i -- Final output activation vector derived from the forward pass on the network at input x
    */
-  private def forward_pass(X_i: DenseVector[Double], NN: NeuralNetwork): DenseVector[Double] = {
+  private def forward_pass(X: DenseMatrix[Double], NN: NeuralNetwork): DenseMatrix[Double] = {
     // Compute first layer activations
-    val h_1 = sigmoid(NN.W_1 * X_i + NN.b_1)
+    val h_1 = sigmoid(X * NN.W_1 + NN.b_1)
 
     // Compute final activations
-    var f = NN.W_2 * h_1 + NN.b_2
+    var f = h_1 * NN.W_2 + NN.b_2
     println("\n--> f")
     println(f)
 
@@ -97,15 +97,18 @@ object NeuralNetwork {
    *
    *  @return P_i -- Normalized probabilities for classes of a given input X
    */
-  private def probs(X_i: DenseVector[Double], NN: NeuralNetwork): DenseVector[Double] = {
+  private def probs(X: DenseMatrix[Double], NN: NeuralNetwork): DenseMatrix[Double] = {
     // Get raw scores F
-    val F = forward_pass(X_i, NN)
+    val F = forward_pass(X, NN)
 
     // Raise to E
     val exp_scores = exp(F)
 
+    // Get summed scores
+    val summed_scores = sum(exp_scores, Axis._1)
+
     // Normalize
-    val probs = exp_scores / sum(exp_scores)
+    val probs = DenseMatrix.tabulate(exp_scores.rows, exp_scores.cols) { (i,j) => exp_scores(i,j) / summed_scores(i) }
     println("\n--> probs")
     println(probs)
 
@@ -125,20 +128,41 @@ object NeuralNetwork {
    *
    *  @return (dW_1, db_1, dW_2, db_2) -- Normalized probabilities for classes of a given input X
    */
-  private def gradient(X_i: DenseVector[Double], y_i: Integer, lambda: Double, NN: NeuralNetwork): (DenseMatrix[Double], DenseVector[Double], DenseMatrix[Double], DenseVector[Double]) = {
+  private def gradient(X: DenseMatrix[Double], Y: DenseVector[Int], lambda: Double, NN: NeuralNetwork): (DenseMatrix[Double], DenseMatrix[Double], DenseMatrix[Double], DenseMatrix[Double]) = {
     // [1] Determine the gradient of the SoftMax output layer (cross-entropy based) at input X
-    var dscores = probs(X_i, NN)  // start with class probability scores (P_k)
-    dscores(y_i.toInt) -= 1 // dL_i / dF_k = P_k - 1(y_i = k) --> (K x 1)
+    val p = probs(X, NN)  // start with class probability scores (P_k)
+    val number_of_examples = X.rows // get total number of batched examples in X -- (N x D)
+    val number_of_classes = p.cols
+    
+    // Derive the gradient on probability scores: dL_i / dF_k = P_k - 1(y_i = k) --> (N x K)
+    // * Note: We also divide by total number of examples within matrix calculation
+    //         so we can encapsulate the average derivative changes within single matrix multiplications (next steps)
+    var dscores = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => if(j == Y(i).toInt) (p(i,j) - 1.0) / number_of_examples else p(i,j) / number_of_examples }
 
-    // Calculate the activations for the hidden layer (W_1 * x + b)
-    val h_1 = sigmoid(NN.W_1 * X_i + NN.b_1) // --> (N x 1)
+    // Calculate the activations for the hidden layer (X * W_1 + b_1)
+    val h_1 = sigmoid(X * NN.W_1 + NN.b_1) // --> (N x hidden_size)
 
     // [2] Backpropagate score gradient through second layer
-    val dW_2 = h_1.T * dscores
-    val db_2 = sum(dscores)
+    var dW_2 = h_1.t * dscores // (N x hidden_size).t * (N x K) --> (hidden_size, K)
+    val summed_scores_b2 = sum(dscores, Axis._0) // (K x 1)
+    val db_2 = DenseMatrix.tabulate(number_of_examples, number_of_classes) { (i,j) => summed_scores_b2(j) } // duplicate weight updates across all row examples (N x K)
+    dW_2 += lambda * NN.W_2 // don't forget the regularization term (comes from global derivative on Loss function w.r.t. W_2)
 
-    // [3] Backpropagate gradients through to first layer
-    val dhidden = 
+    // Determine the global gradient at the hidden inputs --> (N x hidden_layers)
+    //  * Notes: s(h) :* (1 - s(h)) is an elementwise multiplication
+    val sigmoid_h = sigmoid(h_1)
+    val sigmoid_matrix = DenseMatrix.tabulate(sigmoid_h.rows, sigmoid_h.cols) { (i,j) => sigmoid_h(i,j) * (1 - sigmoid_h(i,j)) } // --> (N x hidden_size)
+    val dhidden_intermediate = dscores * NN.W_2.t // (N x K) * (hidden_size, K).t --> (N x hidden_size)
+    val dhidden = DenseMatrix.tabulate(sigmoid_h.rows, sigmoid_h.cols) { (i,j) => dhidden_intermediate(i,j) * sigmoid_matrix(i,j) } // --> (N x hidden_layers)
+
+    // [3] Backpropagate gradients through to first layer --> (D x hidden_size)
+    var dW_1 = X.t * dhidden // (N x D).t * (N x hidden_size) --> (D x hidden_size)
+    val summed_scores_b1 = sum(dhidden, Axis._0) // (hidden_size x 1)
+    val db_1 = DenseMatrix.tabulate(number_of_examples, h_1.cols) { (i,j) => summed_scores_b1(j) } // duplicate weight updates across all row examples (N x K)
+    dW_1 += lambda * NN.W_1 // don't forget the regularization term (comes from global derivative on Loss function w.r.t. W_1)
+
+    // Return final values
+    (dW_1, db_1, dW_2, db_2)
   }
 
   /*
@@ -166,11 +190,17 @@ object NeuralNetwork {
    *
    *  @return L - calculated loss across all N data samples
    */
-  private def loss(X: Array[DenseVector[Double]], Y: Array[Int], lambda: Double, NN: NeuralNetwork): Double = {
+  private def loss(X_batch: Array[DenseVector[Double]], Y: Array[Int], lambda: Double, NN: NeuralNetwork): Double = {
+    // Create matrix from batch of training vectors
+    val X = DenseMatrix.tabulate(X_batch.length, X_batch(0).length) { (i,j) => X_batch(i)(j) } // (N x D)
+
+    // Get activations from forward pass
+    val F = forward_pass(X, NN) // (N x K)
+
     // Compute summed loss across all data points
-    val data_loss = X.zipWithIndex.map {
-      case (x_i, i) => loss_i(x_i, forward_pass(x_i, NN), Y(i))
-    }.fold(0.0)(_ + _) * (1.0 / X.length)
+    val data_loss = X_batch.zipWithIndex.map {
+      case (x_i, i) => loss_i(x_i, F.t(::,i), Y(i))
+    }.fold(0.0)(_ + _) * (1.0 / X_batch.length)
 
     // Compute L2 regularization cost
     val regularization_loss = (0.5 * lambda * NN.W_1.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _)) + (0.5 * lambda *  NN.W_2.toDenseVector.map(w_i => w_i * w_i).fold(0.0)(_ + _))
@@ -189,6 +219,10 @@ object NeuralNetwork {
    */
 
   def train(training_images: Array[LabeledImage], number_of_classes: Int, NN: NeuralNetwork): Boolean = {
+    // Set training parameters
+    val lambda = 0.0
+    val learning_rate = 1
+
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
     val training_data = training_images.map(i => {
       DenseVector(i.data)
@@ -198,8 +232,25 @@ object NeuralNetwork {
     val training_labels = training_images.map(i => i.label)
 
     // Calculate loss
-    val computed_loss = loss(training_data, training_labels, 0.001, NN)
+    val computed_loss = loss(training_data, training_labels, lambda, NN)
     println("Computed loss: " + computed_loss)
+
+    // Calculate the gradient
+    val X = DenseMatrix.tabulate(training_data.length, training_data(0).length) { (i,j) => training_data(i)(j) } // (N x D)
+    val Y = DenseVector(training_labels)
+    val (dW_1, db_1, dW_2, db_2) = gradient(X, Y, lambda, NN)
+
+    // Perform update and create new neural network
+    val updated_nn = new NeuralNetwork(
+      DenseMatrix.tabulate(NN.W_1.rows, NN.W_1.cols) { (i,j) => NN.W_1(i,j) + (learning_rate * dW_1(i,j)) },
+      DenseMatrix.tabulate(NN.b_1.rows, NN.b_1.cols) { (i,j) => NN.b_1(i,j) + (learning_rate * db_1(i,j)) },
+      DenseMatrix.tabulate(NN.W_2.rows, NN.W_2.cols) { (i,j) => NN.W_2(i,j) + (learning_rate * dW_2(i,j)) },
+      DenseMatrix.tabulate(NN.b_2.rows, NN.b_2.cols) { (i,j) => NN.b_2(i,j) + (learning_rate * db_2(i,j)) }
+    )
+
+    // Calculate updated loss
+    val updated_loss = loss(training_data, training_labels, lambda,updated_nn)
+    println("Computed (updated) loss: " + updated_loss)
 
     // Return status of training
     return true
@@ -217,26 +268,26 @@ object NeuralNetwork {
    *  @param hidden_size -- size of intermediate (hidden) layer
    *  @param output_size -- total number of distinct classes in training / test set (for simplicity, we set the output layer to this size)
    */
-  def apply(input_size: Integer, hidden_size: Integer, output_size: Integer, std: Double = 0.0001): NeuralNetwork = {
+  def apply(input_size: Integer, hidden_size: Integer, output_size: Integer, batch_size: Integer, std: Double = 0.0001): NeuralNetwork = {
     println("Initializing network layers...")
 
     // 1) Initialize layer 1 matrices - W_1
-    var W_1 = DenseMatrix.rand(hidden_size, input_size) * Math.sqrt(2.0 / input_size)
+    var W_1 = DenseMatrix.rand(input_size, hidden_size) * Math.sqrt(2.0 / input_size) // (D x hidden_size)
     //println("\n1) W_1...")
     //println(W_1)
 
     // 2) Initialize layer 1 bias -- B_1
-    var b_1 = DenseVector.zeros[Double](hidden_size)
+    var b_1 = DenseMatrix.zeros[Double](batch_size, hidden_size) // (N x hidden_size)
     //println("\n2) b_1...")
     //println(b_1)
 
     // 3) Initialize layer 2 matrices - W_2
-    var W_2 = DenseMatrix.rand(output_size, hidden_size) * Math.sqrt(2.0 / input_size)
+    var W_2 = DenseMatrix.rand(hidden_size, output_size) * Math.sqrt(2.0 / input_size) // (hidden_size, K)
     //println("\n3) W_2...")
     //println(W_2)
 
     // 4) Initialize layer 2 matrixes -- B_1
-    var b_2 = DenseVector.zeros[Double](output_size)
+    var b_2 = DenseMatrix.zeros[Double](batch_size, output_size) // (N x K)
     //println("\n4) b_2...")
     //println(b_2)
 
