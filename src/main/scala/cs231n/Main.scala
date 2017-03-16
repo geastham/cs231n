@@ -53,8 +53,9 @@ object Main extends App {
 
   // Load training data -- add to training set
   println("Loading training data...")
-  val batch_size = 100
-  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(batch_size))
+  val batch_size = 50
+  val number_of_batches = 100
+  for(line <- Source.fromFile(trainingImagesFilePath).getLines().take(batch_size * number_of_batches))
     trainingImages = trainingImages ++ Array(LabeledImage(line))
   val (meanTrainImage, processedTrainingImages) = preProcessImages(trainingImages)
 
@@ -84,7 +85,7 @@ object Main extends App {
   println("Training Neural Network...\n")
   val nn = NeuralNetwork(processedTrainingImages(0).inputSize, processedTrainingImages(0).inputSize * 2, 10, batch_size, 0)
   //val nn = NeuralNetwork(4, 5, 3)
-  NeuralNetwork.train(processedTrainingImages, 10, nn)
+  NeuralNetwork.train(processedTrainingImages, 10, batch_size, nn)
 
   // Predict test values
   /*println("Making predictions...")

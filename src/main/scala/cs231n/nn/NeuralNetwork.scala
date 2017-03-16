@@ -230,10 +230,14 @@ object NeuralNetwork {
    *  @return success -- Boolean flag determining whether traiing was successful
    */
 
-  def train(training_images: Array[LabeledImage], number_of_classes: Int, NN: NeuralNetwork): Boolean = {
+  def train(training_images: Array[LabeledImage], number_of_classes: Int, batch_size: Integer, NN: NeuralNetwork): Boolean = {
     // Set training parameters
     val lambda = 0.001
     val learning_rate = 0.001
+    val number_of_epochs = 100
+
+    // Determine the number of batches
+    val number_of_batches = training_images.length / batch_size
 
     // Perform Bias Trick on training data -- labels: Int, data: DenseVector[Double] - ((D + 1) x 1))
     val training_data = training_images.map(i => {
@@ -242,33 +246,54 @@ object NeuralNetwork {
 
     // Generate training labels
     val training_labels = training_images.map(i => i.label)
-    //training_labels.map(println)
 
-    // Calculate initial loss
-    val computed_loss = loss(training_data, training_labels, lambda, NN)
-    println("Computed (initial) loss: " + computed_loss)
+    // Calculate initial loss -- over all training data
+    //val computed_loss = loss(training_data, training_labels, lambda, NN)
+    //println("Computed (initial) loss: " + computed_loss)
 
     // Create copy of NN
     var updated_nn = new NeuralNetwork(NN.W_1, NN.b_1, NN.W_2, NN.b_2)
 
-    // Run training (on 10 epochs)
-    (0 to 50).map(i => {
-      // Calculate the gradient
-      val X = DenseMatrix.tabulate(training_data.length, training_data(0).length) { (i,j) => training_data(i)(j) } // (N x D)
-      val Y = DenseVector(training_labels)
-      val (dW_1, db_1, dW_2, db_2) = gradient(X, Y, lambda, updated_nn)
+    // Initialize variables in memory
+    var X = DenseMatrix.zeros[Double](batch_size, number_of_classes)
+    var Y = DenseVector.zeros[Int](batch_size)
+    var training_batch = training_data.slice(0, batch_size)
+    var labels_batch = training_labels.slice(0, batch_size)
+    //var dW_1 = null
+    //var db_1 = null
+    //var dW_2 = null
+    //var db_2 = null
+    var updated_loss = 0.0
 
-      // Perform update and create new neural network
-      updated_nn = new NeuralNetwork(
-        DenseMatrix.tabulate(updated_nn.W_1.rows, NN.W_1.cols) { (i,j) => updated_nn.W_1(i,j) - (learning_rate * dW_1(i,j)) },
-        DenseMatrix.tabulate(updated_nn.b_1.rows, NN.b_1.cols) { (i,j) => updated_nn.b_1(i,j) - (learning_rate * db_1(i,j)) },
-        DenseMatrix.tabulate(updated_nn.W_2.rows, NN.W_2.cols) { (i,j) => updated_nn.W_2(i,j) - (learning_rate * dW_2(i,j)) },
-        DenseMatrix.tabulate(updated_nn.b_2.rows, NN.b_2.cols) { (i,j) => updated_nn.b_2(i,j) - (learning_rate * db_2(i,j)) }
-      )
+    // Run training (on number of epochs)
+    (1 to number_of_epochs).foreach(epoch => {
+      // Iterate over each batch
+      (0 to (number_of_batches - 1)).foreach(batch => {
+        // Get data slices
+        training_batch = training_data.slice(batch * batch_size, (batch * batch_size) + batch_size)
+        labels_batch = training_labels.slice(batch * batch_size, (batch * batch_size) + batch_size)
 
-      // Calculate updated loss
-      val updated_loss = loss(training_data, training_labels, lambda, updated_nn)
-      println("[" + i + "] Computed (updated) loss: " + updated_loss)
+        // Calculate the gradient on a slice of the data
+        X = DenseMatrix.tabulate(training_batch.length, training_batch(0).length) { (i,j) => training_batch(i)(j) } // (N x D)
+        Y = DenseVector(labels_batch)
+        val (dW_1, db_1, dW_2, db_2) = gradient(X, Y, lambda, updated_nn)
+
+        // Perform update and create new neural network
+        updated_nn = new NeuralNetwork(
+          DenseMatrix.tabulate(updated_nn.W_1.rows, NN.W_1.cols) { (i,j) => updated_nn.W_1(i,j) - (learning_rate * dW_1(i,j)) },
+          DenseMatrix.tabulate(updated_nn.b_1.rows, NN.b_1.cols) { (i,j) => updated_nn.b_1(i,j) - (learning_rate * db_1(i,j)) },
+          DenseMatrix.tabulate(updated_nn.W_2.rows, NN.W_2.cols) { (i,j) => updated_nn.W_2(i,j) - (learning_rate * dW_2(i,j)) },
+          DenseMatrix.tabulate(updated_nn.b_2.rows, NN.b_2.cols) { (i,j) => updated_nn.b_2(i,j) - (learning_rate * db_2(i,j)) }
+        )
+
+        updated_loss += loss(training_batch, labels_batch, lambda, updated_nn)
+
+        // Calculate updated loss
+        if(batch % 20 == 0) {
+          println("[Epoch - " + epoch + ", Batch - " + batch + "] Computed loss: " + (updated_loss / 20))
+          updated_loss = 0.0
+        }
+      })
     })
 
     // Return status of training
