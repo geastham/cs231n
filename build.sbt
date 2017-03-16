@@ -2,7 +2,7 @@ name := "CS231N"
 
 version := "0.0.1"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.10.5"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.0"
 
@@ -16,5 +16,12 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-natives" % "0.12",
   // the visualization library is distributed separately as well.
   // It depends on LGPL code.
-  "org.scalanlp" %% "breeze-viz" % "0.12"
+  "org.scalanlp" %% "breeze-viz" % "0.12",
+
+  // BigDL
+  "com.intel.analytics.bigdl" % "bigdl" % "0.1.0-SNAPSHOT" from "file:///Users/Documents/Development/Library/BigDL/dl/target/bigdl-0.1.0-SNAPSHOT.jar",
+
+  // Spark
+  "org.apache.spark" % "spark-core_2.10" % "1.6.1",
+  "org.apache.spark" %% "spark-mllib" % "1.6.1"
 )
