@@ -16,8 +16,28 @@ import breeze.stats._
 // Data processing
 import scala.io.Source
 
+// Apache Spark
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+import org.apache.spark.SparkConf
+
+// BigDL imports
+import com.intel.analytics.bigdl._
+import com.intel.analytics.bigdl.utils.Engine
+
 // Main method -- starts and runs the core application
 object Main extends App {
+
+  // Connect to local Spark instance
+  val sc = Engine.init(1, 4, true).map(conf => {
+    conf.setAppName("CS 231n")
+      .setMaster("local")
+      .set("spark.driver.memory", "2g")
+      .set("spark.executor.memory", "2g")
+      .set("spark.akka.frameSize", 64.toString)
+      .set("spark.task.maxFailures", "1")
+    new SparkContext(conf)
+  })
 
   // Pre-process images -- preps an array of images for training / testing
   // @params images -- array of LabeledImage's to prep
@@ -61,7 +81,7 @@ object Main extends App {
 
   // Load training data -- add to test set
   println("Loading test data...")
-  for(line <- Source.fromFile(testImagesFilePath).getLines().take(1))
+  for(line <- Source.fromFile(testImagesFilePath).getLines().take(1000))
     testImages = testImages ++ Array(LabeledImage(line))
   val (meanTestImage, processedTestImages) = preProcessImages(testImages)
 

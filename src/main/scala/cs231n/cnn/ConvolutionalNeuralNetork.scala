@@ -2,6 +2,11 @@ package cs231n.cnn
 
 import cs231n.data.LabeledImage
 
+// BigDL imports
+import com.intel.analytics.bigdl._
+import com.intel.analytics.bigdl.numeric.NumericFloat
+import com.intel.analytics.bigdl.nn._
+
 /*
  *    ===============================================================================================
  *
