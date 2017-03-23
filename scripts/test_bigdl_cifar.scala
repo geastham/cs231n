@@ -1,8 +1,14 @@
 /*
  * 	Scratch Code to Test BigDL (locally) on CIFAR-10 Data
  *	======================
- *	source ~/Documents/Development/Library/BigDL/scripts/bigdl.sh 
- *	spark-shell --jars ~/Documents/Development/Library/BigDL/dl/target/bigdl-0.1.0-SNAPSHOT-jar-with-dependencies.jar
+ *	(mac)
+ *  source ~/Documents/Development/Library/BigDL/scripts/bigdl.sh
+ *  spark-shell --jars ~/Documents/Development/Library/BigDL/dl/target/bigdl-0.1.0-SNAPSHOT-jar-with-dependencies.jar
+ *
+ *  (linux)
+ *  source ~/dev/lib/BigDL/scripts/bigdl.sh
+ *  sbt console -Xmx4g
+ *
  */
 
 // Apache Spark
@@ -29,9 +35,9 @@ sc.stop()
 // Connect to local Spark instance
 val sc = Engine.init(1, 4, true).map(conf => {
   conf.setAppName("CS 231n")
-    //.setMaster("local")
-    .set("spark.driver.memory", "2g")
-    .set("spark.executor.memory", "2g")
+    .setMaster("local")
+    .set("spark.driver.memory", "8g")
+    .set("spark.executor.memory", "8g")
     .set("spark.akka.frameSize", 64.toString)
     .set("spark.task.maxFailures", "1")
   new SparkContext(conf)
@@ -86,16 +92,19 @@ object VggForCifar10 {
   }
 }
 
-// Load data into RDD
+// Load data into RDD -- mac
 val trainingImages = sc.get.textFile("file:///Users/garrett/Documents/Development/coursework/cs231n/data/cifar10-train.txt")
 val testImages = sc.get.textFile("file:///Users/garrett/Documents/Development/coursework/cs231n//data/cifar10-test.txt")
 
+// Load data into RDD - linux
+val trainingImages = sc.get.textFile("file:///home/garrett/dev/coursework/cs231n/data/cifar10-train.txt")
+val testImages = sc.get.textFile("file:///home/garrett/dev/coursework/cs231n//data/cifar10-test.txt")
 
 // Normalizing
-val trainMean = (0.4913996898739353, 0.4821584196221302, 0.44653092422369434)
-val trainStd = (0.24703223517429462, 0.2434851308749409, 0.26158784442034005)
-val testMean = (0.4942142913295297, 0.4851314002725445, 0.45040910258647154)
-val testStd = (0.2466525177466614, 0.2428922662655766, 0.26159238066790275)
+val trainMean = (125.33761, 122.97702,  113.89544)
+val trainStd = (62.99322675508508, 62.08871334906125, 66.70490641235472)
+val testMean = (126.05615,  123.733665, 114.88471)
+val testStd = (62.89639924148415, 62.89639924148415, 66.70606331881852)
 
 // Convert to Labeled BGR Images
 val labeledTrainingImages = trainingImages.map(line => {
@@ -109,22 +118,27 @@ val labeledTrainingImages = trainingImages.map(line => {
     val image_data = raw_image_parts.slice(1, 3073).map(_.toFloat)
 
     // Create and return labeled image
-    new LabeledBGRImage(image_data, 64, 64, image_label)
+    new LabeledBGRImage(image_data, 32, 32, image_label)
 })
 
-// Determine the mean and std of the distributed data
+// Training - Determine the mean and std of the distributed data
 val totalImages = trainingImages.count()
-val trainMeanR = labeledTrainingImages.flatMap(image => image.content.slice(0, 1024)).reduce(_ + _) / (totalImages * 1024)
-val trainMeanG = labeledTrainingImages.flatMap(image => image.content.slice(1024, 2048)).reduce(_ + _) / (totalImages * 1024)
-val trainMeanB = labeledTrainingImages.flatMap(image => image.content.slice(2048, 3072)).reduce(_ + _) / (totalImages * 1024)
-var a = sc.get.parallelize(Array(trainMeanR))
-labeledTrainingImages.map(image => (image, trainMeanR.toFloat))
-val trainStdR = math.sqrt(labeledTrainingImages.map(image => image.content.slice(0, 1024).map(x => x - trainMeanR).map(x => x * x)).reduce(_ + _) / (totalImages * 1024))
+val trainMeanR = labeledTrainingImages.flatMap(image => image.content.slice(0, 1024)).reduce(_ + _) / (totalImages * 1024) // 125.33761
+val trainMeanG = labeledTrainingImages.flatMap(image => image.content.slice(1024, 2048)).reduce(_ + _) / (totalImages * 1024) // 122.97702
+val trainMeanB = labeledTrainingImages.flatMap(image => image.content.slice(2048, 3072)).reduce(_ + _) / (totalImages * 1024) // 113.89544
+val trainStdR = math.sqrt(labeledTrainingImages.flatMap(image => image.content.slice(0, 1024).map(x => x - 125.33761).map(x => x * x)).reduce(_ + _) / (totalImages * 1024)) // 62.99322675508508
+val trainStdG = math.sqrt(labeledTrainingImages.flatMap(image => image.content.slice(1024, 2048).map(x => x - 122.97702).map(x => x * x)).reduce(_ + _) / (totalImages * 1024)) // 62.08871334906125
+val trainStdB = math.sqrt(labeledTrainingImages.flatMap(image => image.content.slice(2048, 3072).map(x => x - 113.89544).map(x => x * x)).reduce(_ + _) / (totalImages * 1024)) // 66.70490641235472
 
-val sampleLabeledTrainingImages = labeledTrainingImages._1.map { case (image: LabeledBGRImage) =>
+val sampleLabeledTrainingImages = labeledTrainingImages.map { case (image: LabeledBGRImage) =>
+    // Center and normalize values
+    val redValues = image.content.slice(0, 1024).map(r => (r - trainMean._1) / trainStd._1).map(_.toFloat)
+    val greenValues = image.content.slice(1024, 2048).map(r => (r - trainMean._2) / trainStd._2).map(_.toFloat)
+    val blueValues = image.content.slice(2048, 3072).map(r => (r - trainMean._3) / trainStd._3).map(_.toFloat)
+
     // Transform to sample
     Sample(
-        featureTensor = Tensor(image.content, Array(64, 64, 3)),
+        featureTensor = Tensor(redValues ++ greenValues ++ blueValues, Array(3, 32, 32)),
         labelTensor = Tensor(Array(image.label), Array(1))
     )
 }
@@ -141,14 +155,28 @@ val labeledTestImages = testImages.map(line => {
 
     // Create and return labeled image
     new LabeledBGRImage(image_data, 64, 64, image_label)
-}) -> BGRImgNormalizer(trainMean, trainStd)
+})
 
-val sampleLabeledTestImages = labeledTestImages._1.map { case (image: LabeledBGRImage) =>
-    // Transform to sample
-    Sample(
-        featureTensor = Tensor(image.content, Array(64, 64, 3)),
-        labelTensor = Tensor(Array(image.label), Array(1))
-    )
+// Test - Determine the mean and std of the distributed data
+val totalImages = testImages.count()
+val testMeanR = labeledTestImages.flatMap(image => image.content.slice(0, 1024)).reduce(_ + _) / (totalImages * 1024) // 126.05615
+val testMeanG = labeledTestImages.flatMap(image => image.content.slice(1024, 2048)).reduce(_ + _) / (totalImages * 1024) // 123.733665
+val testMeanB = labeledTestImages.flatMap(image => image.content.slice(2048, 3072)).reduce(_ + _) / (totalImages * 1024) // 114.88471
+val testStdR = math.sqrt(labeledTestImages.flatMap(image => image.content.slice(0, 1024).map(x => x - 126.05615).map(x => x * x)).reduce(_ + _) / (totalImages * 1024)) //  62.89639924148415
+val testStdG = math.sqrt(labeledTestImages.flatMap(image => image.content.slice(1024, 2048).map(x => x - 123.733665).map(x => x * x)).reduce(_ + _) / (totalImages * 1024)) // 61.93753229283957
+val testStdB = math.sqrt(labeledTestImages.flatMap(image => image.content.slice(2048, 3072).map(x => x - 114.88471).map(x => x * x)).reduce(_ + _) / (totalImages * 1024)) // 66.70606331881852
+
+val sampleLabeledTestImages = labeledTestImages.map { case (image: LabeledBGRImage) =>
+  // Center and normalize values
+  val redValues = image.content.slice(0, 1024).map(r => (r - testMean._1) / testStd._1).map(_.toFloat)
+  val greenValues = image.content.slice(1024, 2048).map(r => (r - testMean._2) / testStd._2).map(_.toFloat)
+  val blueValues = image.content.slice(2048, 3072).map(r => (r - testMean._3) / testStd._3).map(_.toFloat)
+
+  // Transform to sample
+  Sample(
+      featureTensor = Tensor(redValues ++ greenValues ++ blueValues, Array(3, 32, 32)),
+      labelTensor = Tensor(Array(image.label), Array(1))
+  )
 }
 
 // Build model
@@ -172,8 +200,3 @@ optimizer.setState(state)
 
 // Stop SparkContext
 sc.stop()
-
-
-
-
-

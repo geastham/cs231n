@@ -66,10 +66,10 @@ def unload_test_data():
 def main():
 
     # Unload training data
-    #unload_training_data()
+    unload_training_data()
 
     # Unload test data
-    unload_test_data()
+    #unload_test_data()
 
 
 if __name__ == "__main__":

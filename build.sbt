@@ -19,9 +19,11 @@ libraryDependencies  ++= Seq(
   "org.scalanlp" %% "breeze-viz" % "0.12",
 
   // BigDL
-  "com.intel.analytics.bigdl" % "bigdl" % "0.1.0-SNAPSHOT" from "file:///Users/Documents/Development/Library/BigDL/dl/target/bigdl-0.1.0-SNAPSHOT.jar",
+  "com.intel.analytics.bigdl" % "bigdl" % "0.1.0-SNAPSHOT",
 
   // Spark
   "org.apache.spark" % "spark-core_2.10" % "1.6.1",
   "org.apache.spark" %% "spark-mllib" % "1.6.1"
 )
+
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
