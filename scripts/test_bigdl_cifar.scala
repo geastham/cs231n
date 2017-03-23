@@ -8,6 +8,7 @@
  *  (linux)
  *  source ~/dev/lib/BigDL/scripts/bigdl.sh
  *  sbt console -Xmx4g
+ *  spark-shell --jars ~/dev/lib/BigDL/spark/dl/target/bigdl-0.1.0-SNAPSHOT-jar-with-dependencies.jar
  *
  */
 
@@ -35,7 +36,7 @@ sc.stop()
 // Connect to local Spark instance
 val sc = Engine.init(1, 4, true).map(conf => {
   conf.setAppName("CS 231n")
-    .setMaster("local")
+    //.setMaster("spark://green-lantern:7077")
     .set("spark.driver.memory", "8g")
     .set("spark.executor.memory", "8g")
     .set("spark.akka.frameSize", 64.toString)
@@ -92,6 +93,25 @@ object VggForCifar10 {
   }
 }
 
+// Simple Convolutional model
+object SimpleCNN {
+  def apply(classNum: Int): Module[Float] = {
+    val model = Sequential[Float]()
+    model.add(Reshape(Array(1, 32, 32)))
+      .add(SpatialConvolution(1, 6, 5, 5))
+      .add(Tanh())
+      .add(SpatialMaxPooling(2, 2, 2, 2))
+      .add(Tanh())
+      .add(SpatialConvolution(6, 12, 5, 5))
+      .add(SpatialMaxPooling(2, 2, 2, 2))
+      .add(Reshape(Array(256)))
+      .add(Linear(256, 100))
+      .add(Tanh())
+      .add(Linear(100, classNum))
+      .add(LogSoftMax())
+  }
+}
+
 // Load data into RDD -- mac
 val trainingImages = sc.get.textFile("file:///Users/garrett/Documents/Development/coursework/cs231n/data/cifar10-train.txt")
 val testImages = sc.get.textFile("file:///Users/garrett/Documents/Development/coursework/cs231n//data/cifar10-test.txt")
@@ -121,6 +141,26 @@ val labeledTrainingImages = trainingImages.map(line => {
     new LabeledBGRImage(image_data, 32, 32, image_label)
 })
 
+val labeledTrainingImages = trainingImages.map(line => {
+    // Break string into parts
+    val raw_image_parts = line.split(" ")
+
+    // Get label value
+    val image_label = raw_image_parts(0).toFloat
+
+    // Get image pixel values
+    val image_data = raw_image_parts.slice(1, 3073).map(_.toFloat)
+
+    // Get first values
+    val redValues = image_data.slice(0, 1024)
+
+    // Create and return labeled image
+    Sample(
+        featureTensor = Tensor(redValues, Array(1024)),
+        labelTensor = Tensor(Array(image_label), Array(1))
+    )
+})
+
 // Training - Determine the mean and std of the distributed data
 val totalImages = trainingImages.count()
 val trainMeanR = labeledTrainingImages.flatMap(image => image.content.slice(0, 1024)).reduce(_ + _) / (totalImages * 1024) // 125.33761
@@ -138,7 +178,7 @@ val sampleLabeledTrainingImages = labeledTrainingImages.map { case (image: Label
 
     // Transform to sample
     Sample(
-        featureTensor = Tensor(redValues ++ greenValues ++ blueValues, Array(3, 32, 32)),
+        featureTensor = Tensor(redValues, Array(1024)).contiguous(),
         labelTensor = Tensor(Array(image.label), Array(1))
     )
 }
@@ -181,11 +221,12 @@ val sampleLabeledTestImages = labeledTestImages.map { case (image: LabeledBGRIma
 
 // Build model
 val model = VggForCifar10(10)
+val model = SimpleCNN(10)
 
 // Setup optimizer
 val optimizer = Optimizer(
     model = model,
-    sampleRDD = sampleLabeledTrainingImages.randomSplit(Array(0.1, 0.9))(0),
+    sampleRDD = labeledTrainingImages.randomSplit(Array(0.1, 0.9))(0),
     criterion = new ClassNLLCriterion[Float](),
     batchSize = 100
 )
@@ -197,6 +238,8 @@ optimizer.setState(state)
          .setValidation(Trigger.everyEpoch, sampleLabeledTestImages.randomSplit(Array(0.2, 0.8))(0), Array(new Top1Accuracy[Float]), 100)
          .setEndWhen(Trigger.maxEpoch(20))
          .optimize()
+
+optimizer.setState(state).setEndWhen(Trigger.maxEpoch(20)).optimize()
 
 // Stop SparkContext
 sc.stop()
