@@ -24,7 +24,7 @@ object LeNet5 {
   def apply(classNum: Int): Module[Float] = {
     val model = Sequential()
     model.add(Reshape(Array(3, 28, 28)))
-      .add(SpatialConvolution(1, 6, 5, 5))
+      .add(SpatialConvolution(1, 6, 5, 5)) // (28 x 28) --> ()
       .add(Tanh())
       .add(SpatialMaxPooling(2, 2, 2, 2))
       .add(Tanh())
